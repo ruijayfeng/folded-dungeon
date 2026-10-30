@@ -16,6 +16,13 @@ const ROOM_PATHS := {
 	"ballista_room": "res://data/rooms/ballista_room.tres",
 	"boss_room": "res://data/rooms/boss_room.tres",
 	"corridor_room": "res://data/rooms/corridor_room.tres",
+	"storm_room": "res://data/rooms/storm_room.tres",
+	"gravity_room": "res://data/rooms/gravity_room.tres",
+	"echo_room": "res://data/rooms/echo_room.tres",
+	"conduit_room": "res://data/rooms/conduit_room.tres",
+	"vault_room": "res://data/rooms/vault_room.tres",
+	"fold_room": "res://data/rooms/fold_room.tres",
+
 }
 const RECIPE_PATHS := {
 	"combustion": "res://data/recipes/combustion.tres",
@@ -36,6 +43,12 @@ func _initialize() -> void:
 	errors += _save_room(_make_ballista_room(), ROOM_PATHS["ballista_room"])
 	errors += _save_room(_make_boss_room(), ROOM_PATHS["boss_room"])
 	errors += _save_room(_make_corridor_room(), ROOM_PATHS["corridor_room"])
+	errors += _save_room(_make_storm_room(), ROOM_PATHS["storm_room"])
+	errors += _save_room(_make_gravity_room(), ROOM_PATHS["gravity_room"])
+	errors += _save_room(_make_echo_room(), ROOM_PATHS["echo_room"])
+	errors += _save_room(_make_conduit_room(), ROOM_PATHS["conduit_room"])
+	errors += _save_room(_make_vault_room(), ROOM_PATHS["vault_room"])
+	errors += _save_room(_make_fold_room(), ROOM_PATHS["fold_room"])
 	errors += _save_resource(_make_combustion_recipe(), RECIPE_PATHS["combustion"])
 	errors += _save_resource(_make_thermal_neutralize_recipe(), RECIPE_PATHS["thermal_neutralize"])
 	errors += _save_resource(_make_charge_release_recipe(), RECIPE_PATHS["charge_release"])
@@ -122,6 +135,53 @@ func _make_accumulator_room() -> RoomDef:
 	def.absorb_channel = Channels.Channel.CHARGE
 	def.absorb_percent = 50
 	def.description = "每回合吸收相邻房间 50% 的能量；能量达到 600 时释放（各相邻 +100）。"
+	return def
+
+
+func _make_storm_room() -> RoomDef:
+	var def := _basic_room(&"storm_room", "风暴房", RoomDef.Category.ELEMENT, 15, 1)
+	def.tags = _tags([&"wind_source"])
+	def.emitters = _emitters([_emitter(Channels.Channel.AIRFLOW, 200)])
+	def.description = "每回合产生气流（+200）；气流会把毒雾/火焰/投射物吹向相邻房间。"
+	return def
+
+
+func _make_gravity_room() -> RoomDef:
+	var def := _basic_room(&"gravity_room", "重力房", RoomDef.Category.CONVERSION, 15, 1)
+	def.tags = _tags([&"gravity"])
+	def.gravity_dir = DoorSpec.Dir.S
+	def.description = "房间内重力朝南：击退方向改为正南（战斗中生效）。"
+	return def
+
+
+func _make_echo_room() -> RoomDef:
+	var def := _basic_room(&"echo_room", "回声房", RoomDef.Category.SPECIAL, 15, 1)
+	def.tags = _tags([&"echo"])
+	def.periodic_turns = 2
+	def.periodic_event = &"echo_pulse"
+	def.description = "每 2 回合产生一次回声脉冲事件（重复房间行动的效果待后续扩展）。"
+	return def
+
+
+func _make_conduit_room() -> RoomDef:
+	var def := _basic_room(&"conduit_room", "导管房", RoomDef.Category.TRANSFER, DoorSpec.Dir.W | DoorSpec.Dir.E, 1)
+	def.tags = _tags([&"conduit"])
+	def.transfer_percent = 150
+	def.description = "沿东西方向定向传导，传导效率 150%。"
+	return def
+
+
+func _make_vault_room() -> RoomDef:
+	var def := _basic_room(&"vault_room", "宝库房", RoomDef.Category.RESOURCE, 15, 1)
+	def.tags = _tags([&"vault"])
+	def.description = "建成时立即获得 25 金币（单局经济来源）。"
+	return def
+
+
+func _make_fold_room() -> RoomDef:
+	var def := _basic_room(&"fold_room", "折叠房", RoomDef.Category.SPECIAL, 15, 2)
+	def.tags = _tags([&"fold_chamber"])
+	def.description = "建成后获得 1 次折叠充能（M2 虚拟传导边；折叠移动待扩展）。"
 	return def
 
 

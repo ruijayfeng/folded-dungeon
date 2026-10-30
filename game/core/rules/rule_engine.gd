@@ -157,10 +157,37 @@ func clone_for_preview() -> RuleEngine:
 
 
 func snapshot() -> Dictionary:
-	var rooms := {}
+	var rooms: Array[Dictionary] = []
 	for cell in _sorted_state_cells():
-		rooms[str(cell)] = states[cell].snapshot()
+		var state: RoomState = states[cell]
+		rooms.append({
+			"cell": [cell.x, cell.y],
+			"channels": state.channel_snapshot(),
+			"states": state.states.duplicate(),
+		})
 	return {"turn": turn, "rooms": rooms, "event_count": events.size()}
+
+
+func restore_snapshot(data: Dictionary) -> void:
+	turn = int(data.get("turn", 0))
+	var room_entries: Array = data.get("rooms", [])
+	for entry in room_entries:
+		if not (entry is Dictionary):
+			continue
+		var cell_array: Array = entry.get("cell", [])
+		if cell_array.size() != 2:
+			continue
+		var cell := Vector2i(int(cell_array[0]), int(cell_array[1]))
+		var state: RoomState = states.get(cell, null)
+		if state == null:
+			continue
+		var channels: Array = entry.get("channels", [])
+		for index in mini(channels.size(), Channels.COUNT):
+			state.set_channel(index, int(channels[index]))
+		state.states.clear()
+		var saved_states: Dictionary = entry.get("states", {})
+		for state_name in saved_states:
+			state.states[state_name] = int(saved_states[state_name])
 
 
 static func load_recipe_library(path: String = "res://data/recipes/") -> Array[ReactionRecipe]:

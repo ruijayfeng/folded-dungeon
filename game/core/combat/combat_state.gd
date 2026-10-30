@@ -159,6 +159,8 @@ func _knockback(attacker: Unit, defender: Unit) -> Dictionary:
 		dir = DoorSpec.Dir.E if delta.x > 0 else DoorSpec.Dir.W
 	elif delta.y != 0:
 		dir = DoorSpec.Dir.S if delta.y > 0 else DoorSpec.Dir.N
+	if room != null and room.definition != null and room.definition.gravity_dir != 0:
+		dir = room.definition.gravity_dir
 	var target := defender.local_cell + DoorSpec.delta(dir)
 	var blocked := not walkable_cell(target)
 	if not blocked and unit_at(target) != null:

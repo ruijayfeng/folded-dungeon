@@ -29,7 +29,7 @@ description: 《折叠地牢》项目上下文与工作约定 — Godot 4.7.2 �
 
 ## 当前阶段（2026-10-30）
 
-- **Phase 0 / M0–M4 已完成**（2026-10-30）：探索/构筑、规则引擎、战斗、单局/楼层核心闭环跑通（75 tests / 956 assertions）。**下一步 M5**（内容与发布准备；GUI 运行层并入 M5-4）。
+- **Phase 0 / M0–M5 已完成（原型收口，2026-10-30）**：12 房间、规则引擎、战斗、单局/楼层、可玩 GUI 运行层、存档/种子复现跑通（31 cases / 86 tests / 1472 assertions）。主场景 `presentation/run_mode/run_mode.tscn`；正式美术/音频/Windows 导出/人工试玩待后续（见 docs/08）。
 - 调研报告 `research/01-Godot开源项目调研.md` 已给出可借鉴项目。
 - 开发任务已排好：`.agents/plans/2026-10-30-任务推进方案.md`（Phase 0 → M0–M5），按 Task ID 执行与勾选。
 - 4 个评审阻塞项已关闭（`research/02` 修复记录）：B1 几何 → 内部 9×9 + 门锚点；B2 放置/旋转/替换不变量；B3 纯数据 `RoomLayout`；B4 M0 前置改为 D4/D6 冻结。

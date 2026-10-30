@@ -17,6 +17,7 @@ enum Category { ELEMENT = 0, CONVERSION = 1, TRANSFER = 2, COMBAT = 3, RESOURCE 
 @export var wave_redirect_steps: int = 0
 @export var periodic_turns: int = 0
 @export var periodic_event: StringName = &""
+@export var gravity_dir: int = 0
 @export var build_cost: int = 1
 @export var tags: Array[StringName] = []
 @export var description: String = ""
@@ -57,6 +58,8 @@ func validate() -> PackedStringArray:
 		errors.append("ROOM_PERIODIC_TURNS_INVALID: %d" % periodic_turns)
 	if periodic_turns > 0 and periodic_event == &"":
 		errors.append("ROOM_PERIODIC_EVENT_EMPTY")
+	if gravity_dir != 0 and not DoorSpec.is_door_dir(gravity_dir):
+		errors.append("ROOM_GRAVITY_DIR_INVALID: %d" % gravity_dir)
 	return errors
 
 

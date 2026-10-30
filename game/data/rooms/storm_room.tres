@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="RoomDef" format=3]
+
+[ext_resource type="Script" path="res://core/rules/channel_emitter.gd" id="1_aqvc5"]
+[ext_resource type="Script" path="res://core/grid/room_layout.gd" id="2_xjkdu"]
+[ext_resource type="Script" path="res://core/grid/room_def.gd" id="3_ycqv2"]
+
+[sub_resource type="Resource" id="Resource_k8ner"]
+script = ExtResource("1_aqvc5")
+channel = 4
+rate_per_turn = 200
+
+[sub_resource type="Resource" id="Resource_f0rmt"]
+script = ExtResource("2_xjkdu")
+terrain = PackedInt32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+door_cells = {
+1: Vector2i(4, 0),
+2: Vector2i(8, 4),
+4: Vector2i(4, 8),
+8: Vector2i(0, 4)
+}
+door_anchors = {
+1: Vector2(4.5, 0),
+2: Vector2(9, 4.5),
+4: Vector2(4.5, 9),
+8: Vector2(0, 4.5)
+}
+spawn_cells = Array[Vector2i]([Vector2i(4, 4)])
+
+[resource]
+script = ExtResource("3_ycqv2")
+id = &"storm_room"
+display_name = "风暴房"
+door_mask = 15
+layout = SubResource("Resource_f0rmt")
+emitters = Array[ExtResource("1_aqvc5")]([SubResource("Resource_k8ner")])
+tags = Array[StringName]([&"wind_source"])
+description = "每回合产生气流（+200）；气流会把毒雾/火焰/投射物吹向相邻房间。"

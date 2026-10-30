@@ -2,7 +2,7 @@
 
 > 2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike · Godot 4.x
 >
-> **当前状态（2026-10-30）：Phase 0 / M0–M4 已完成。** 垂直切片核心闭环已跑通（75 tests / 956 assertions）：楼层计划、构筑→探索→战斗/事件/休整/商店→奖励→Boss→结算、Boss 房间规则能力、两层推进；下一步 M5（内容与发布准备，含 GUI 运行层接入）。6 项非 M0 决策仍按建议值推进。
+> **当前状态（2026-10-30）：Phase 0 / M0–M5 已完成（原型收口）。** `31 cases / 86 tests / 1472 assertions` 全绿：12 房间、规则引擎、战斗、单局/楼层、**可玩 GUI 运行层**（`run_mode.tscn`：构筑/探索/战斗/事件/商店/Boss/结算）、构筑节点存档与种子复现。正式美术/音频/Windows 导出仍待外部条件（见 `docs/08`）。
 
 ---
 
@@ -16,10 +16,10 @@
 | 开源调研 | ✅ 完成 | 5 个指定项目 + 星标列表 + 20+ 补充候选（`research/01`） |
 | 工具链 | ✅ 就绪 | Godot 4.7.2 本地可无头运行；`.tools/` |
 | AI 开发技能 | ✅ 已安装 | 25 个项目级技能（`.agents/skills/`），DSH 热发现可用 |
-| 工程代码 | ✅ M4 完成 | 探索/构筑 + 规则引擎 + 战斗 + 单局/楼层闭环；M5 待开始 |
+| 工程代码 | ✅ M5 完成 | 12 房间 + 规则引擎 + 战斗 + 单局 + **可玩 GUI 运行层** + 存档；原型收口 |
 | 版本管理 | ⛔ 未初始化 | 尚未 `git init`（建议 M0 前初始化） |
 | 待确认决策 | ⏳ 6 项 | D1/D2/D3/D5/D13/B2（见下） |
-| 任务计划 | ✅ 已排好 · Phase 0–M4 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ✅ → M2 ✅ → M3 ✅ → M4 ✅ → M5 ⏳（共 49 个可验收 Task） |
+| 任务计划 | ✅ 已排好 · Phase 0–M5 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0–M4 ✅ → M5 ✅（原型收口；M5-6 取消，M5-7 待导出模板） |
 | 评审阻塞项 | ✅ 已修复 | B1 旋转几何 / B2 放置校验 / B3 模拟层污染 / B4 M0 前置错位（见 research/02 修复记录） |
 
 > 结论：**设计层面约 85% 就绪，工程层面 0%。** 现在即可进入 M0，但建议先修 B1–B4（半天内可完成）。
@@ -38,6 +38,11 @@
 | [research/02-设计文档复核记录](research/02-设计文档复核记录.md) | 独立复核：4 个阻塞项 + 11 个重要问题 + 建议 | ✅ |
 | [.agents/skills/README](.agents/skills/README.md) | 项目级 AI 技能索引、用法、许可证与升级方式 | ✅ |
 | [.agents/plans/2026-10-30-任务推进方案](.agents/plans/2026-10-30-任务推进方案.md) | **任务推进方案**：Phase 0 + M0–M5，每个 Task 的目标/产出/涉及文件/验收标准 | ✅ |
+| [04-M4垂直切片验收记录](docs/04-M4垂直切片验收记录.md) | 自动化垂直切片结果与偏差 | ✅ |
+| [05-GUI运行层说明](docs/05-GUI运行层说明.md) | 可玩版本操作、界面、架构与手工验收清单 | ✅ |
+| [06-平衡报告](docs/06-平衡报告.md) | 通道/房间/配方数值、组合验证、调参旋钮 | ✅ |
+| [07-美术方向与占位说明](docs/07-美术方向与占位说明.md) | 占位方案、D11 方向选项、替换顺序 | ✅ |
+| [08-发布检查清单](docs/08-发布检查清单.md) | 构建/内容/存档/导出/已知问题与收口判定 | ✅ |
 
 ---
 
@@ -111,7 +116,10 @@ gmNew/
 python3 tools/install-skills.py --check
 python3 tools/install-skills.py --update
 
-# 无头测试（M0 起可用）
+# 运行游戏（GUI）
+game/tools/godot run
+
+# 无头测试
 export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot"
 "$GODOT_BIN" --headless --path game --script res://tests/run_tests.gd
 ```
@@ -205,12 +213,31 @@ export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godo
 
 **实现差异（已记录）：** 垂直切片当前为**脚本驱动核心闭环**；玩家可玩的构筑/商店/事件/首领 GUI 在 M5-4 接入。`auto_*` 方法只用于自动化验收。
 
+## M5 已完成（2026-10-30，原型收口）
+
+**产物：**
+- **12 个规则房间**（熔炉/毒雾/冰霜/风暴/镜面/重力/蓄能/回声/导管/箭塔/宝库/折叠）+ 4 个结构房间（起始/战斗/Boss/走廊）；
+- **可玩 GUI 运行层** `game/presentation/run_mode/run_mode.tscn`：构筑（1/2/3 选蓝图、鼠标选格、R 旋转、Enter 建造）→ 探索（WASD）→ 战斗（WASD/SPACE/Enter）→ 事件/休整/商店（1/2/3）→ Boss → 结算；
+- **存档/复现**：构筑节点 JSON 快照存/读、同种子楼层与蓝图复现；
+- **平衡/组合验证**：12×12 房间矩阵 144 组确定性测试、通道/配方数值与调参旋钮（`docs/06`）；
+- **发布准备**：`export_presets.cfg` + Windows 导出脚本、发布检查清单（`docs/08`）、美术方向与占位说明（`docs/07`）。
+
+**验收证据：**
+- `game/tools/godot test`：`{"ok": true, "cases": 31, "tests": 86, "assertions": 1472, "failed": 0}`；
+- GUI 运行层无头运行退出码 0；M4 垂直切片自动化通关；存档往返后继续通关；
+- 12 个规则房间全部加载/校验；144 组房间组合确定性一致；
+- 主场景导入无 SCRIPT ERROR。
+
+**未完成（外部条件 / 决策）：** 正式美术（D11）、音频、局外成长（D10 首个可玩版本不做）、Windows 实际导出（缺 4.7.2 导出模板）、人工 GUI 试玩验收。详见 `docs/08`。
+
 ## 下一步（按任务计划执行）
 
-完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M5（内容与发布准备）：
+原型里程碑到此收口。**后续（非本次范围）：**
 
-1. M5-1 补齐 12 房间 → M5-2 平衡与组合验证；
-2. M5-3 美术方向与占位替换 → M5-4 UI 打磨与**可玩 GUI 运行层接入**（构筑/商店/事件/首领）；
-3. M5-5 存档断点与种子分享 → M5-6 局外成长（D10 决策后）→ M5-7 Windows 导出与冒烟 → M5-8 发布前验收。
+1. 设计确认 **D11 美术方向**，替换占位色块与添加音频；
+2. 下载 Godot 4.7.2 导出模板 → 运行 `game/tools/export_windows.sh` → Windows 冒烟测试；
+3. 人工 GUI 试玩一局（按 `docs/05` 清单），记录手感/可读性/卡死问题；
+4. 评估 **D10 局外成长**（解锁房间/初始能力）与折叠移动、逐格弹道等扩展；
+5. 接入 CI（GitHub Actions）跑 `game/tools/godot test`。
 
 > 决策未确认时按计划中的 **Assumptions** 建议值推进；已用技能：`godot-project-setup`、`godot-gdscript-headless-testing`、`godot-resources`、`event-bus`。

@@ -136,12 +136,190 @@ func build_and_place(offer_index: int, cell: Vector2i, orientation: int) -> Vali
 	state.build_points = session.grid.build_points
 	if not state.blueprints.has(def.id):
 		state.blueprints.append(def.id)
+	if def.tags.has(&"vault"):
+		state.gold += 25
+		_log(&"vault_bonus", {"gold": 25})
 	engine.sync_rooms()
 	session.leave_build_node()
 	phase = Phase.EXPLORE
 	state.phase = &"explore"
 	_log(&"room_built", {"room_def": def.id, "cell": cell, "orientation": orientation, "slot_index": slot_index})
 	return report
+
+
+## Saves only at a build node (M5 checkpoint). JSON-safe dictionary.
+func save_snapshot() -> Dictionary:
+	if state == null or phase != Phase.BUILD or session == null:
+		return {}
+	var rooms: Array[Dictionary] = []
+	for room in session.grid.all_rooms():
+		rooms.append({
+			"cell": [room.cell.x, room.cell.y],
+			"def": String(room.definition.id),
+			"orientation": room.orientation,
+		})
+	var bindings := {}
+	for cell in slot_bindings.keys():
+		bindings["%d,%d" % [cell.x, cell.y]] = slot_bindings[cell]
+	return {
+		"version": 1,
+		"state": state.snapshot(),
+		"rng": rng.snapshot(),
+		"slot_bindings": bindings,
+		"rooms": rooms,
+		"offer": _offer_ids(),
+		"player": {
+			"room": [session.player.room_cell.x, session.player.room_cell.y],
+			"cell": [session.player.local_cell.x, session.player.local_cell.y],
+			"hp": session.player.hp,
+			"max_hp": session.player.max_hp,
+		},
+		"engine": engine.snapshot(),
+		"events": state.events.duplicate(true),
+		"fold_charges": session.fold_charges,
+		"fold_edges": session.propagation_virtual_edges(),
+	}
+
+
+func save_to_json() -> String:
+	var data := save_snapshot()
+	return JSON.stringify(data) if not data.is_empty() else ""
+
+
+func load_from_json(text: String) -> bool:
+	if text.is_empty():
+		return false
+	var parsed: Variant = JSON.parse_string(text)
+	if not (parsed is Dictionary):
+		return false
+	return load_snapshot(parsed)
+
+
+func load_snapshot(data: Dictionary) -> bool:
+	if data.is_empty():
+		return false
+	var saved_state: Dictionary = data.get("state", {})
+	if saved_state.is_empty():
+		return false
+	state = RunState.new()
+	state.seed_value = int(saved_state.get("seed", 0))
+	state.floor = int(saved_state.get("floor", 1))
+	state.total_floors = int(saved_state.get("total_floors", 2))
+	state.gold = int(saved_state.get("gold", 0))
+	state.build_points = int(saved_state.get("build_points", 10))
+	state.phase = StringName(saved_state.get("phase", "build"))
+	state.slot_index = int(saved_state.get("slot_index", 0))
+	state.cleared_slots.clear()
+	for slot in saved_state.get("cleared_slots", []):
+		state.cleared_slots.append(int(slot))
+	var saved_blueprints: Array = saved_state.get("blueprints", [])
+	state.blueprints.clear()
+	for blueprint in saved_blueprints:
+		state.blueprints.append(StringName(blueprint))
+	state.events.clear()
+	for saved_event in data.get("events", []):
+		if saved_event is Dictionary:
+			state.events.append(saved_event)
+	rng = RngStreams.new(state.seed_value)
+	rng.restore(data.get("rng", {}))
+	plan = FloorPlan.generate(state.seed_value, state.floor)
+
+	session = DungeonSession.new()
+	var rooms: Array = data.get("rooms", [])
+	var start_orientation := 0
+	var start_def: RoomDef = null
+	for entry in rooms:
+		var cell_array: Array = entry.get("cell", [])
+		if cell_array.size() != 2:
+			continue
+		var cell := Vector2i(int(cell_array[0]), int(cell_array[1]))
+		if cell == START_CELL:
+			start_def = _room_def(StringName(entry.get("def", "")))
+			start_orientation = int(entry.get("orientation", 0))
+	if start_def == null:
+		return false
+	var report := session.start_run(start_def, START_CELL, start_orientation, state.seed_value + state.floor * 1000, 9999)
+	if not report.is_valid():
+		return false
+	var pending_rooms: Array = []
+	for entry in rooms:
+		var cell_array: Array = entry.get("cell", [])
+		if cell_array.size() != 2:
+			continue
+		var cell := Vector2i(int(cell_array[0]), int(cell_array[1]))
+		if cell != START_CELL:
+			pending_rooms.append(entry)
+	var placed_cells := {START_CELL: true}
+	var guard := 0
+	while not pending_rooms.is_empty() and guard < 100:
+		guard += 1
+		var progressed := false
+		for index in range(pending_rooms.size() - 1, -1, -1):
+			var entry: Dictionary = pending_rooms[index]
+			var cell_array: Array = entry.get("cell", [])
+			if cell_array.size() != 2:
+				return false
+			var cell := Vector2i(int(cell_array[0]), int(cell_array[1]))
+			if not _has_placed_neighbor(cell, placed_cells):
+				continue
+			var def := _room_def(StringName(entry.get("def", "")))
+			if def == null:
+				return false
+			var placement := session.grid.place_room(def, cell, int(entry.get("orientation", 0)))
+			if not placement.is_valid():
+				return false
+			placed_cells[cell] = true
+			pending_rooms.remove_at(index)
+			progressed = true
+		if not progressed:
+			return false
+	if not pending_rooms.is_empty():
+		return false
+	session.grid.build_points = state.build_points
+	for blueprint_id in state.blueprints:
+		var blueprint_def := _room_def(blueprint_id)
+		if blueprint_def != null:
+			session.acquire_blueprint(blueprint_def)
+	var player_data: Dictionary = data.get("player", {})
+	var player_room: Array = player_data.get("room", [START_CELL.x, START_CELL.y])
+	var player_cell: Array = player_data.get("cell", [4, 4])
+	session.player.room_cell = Vector2i(int(player_room[0]), int(player_room[1]))
+	session.player.local_cell = Vector2i(int(player_cell[0]), int(player_cell[1]))
+	session.player.hp = int(player_data.get("hp", session.player.hp))
+	session.player.max_hp = int(player_data.get("max_hp", session.player.max_hp))
+	session.player.alive = session.player.hp > 0
+	session.fold_charges = int(data.get("fold_charges", 0))
+	session.folded_edges.clear()
+	for edge in data.get("fold_edges", []):
+		session.folded_edges.append({"a": Vector2i(int(edge["a"][0]), int(edge["a"][1])), "b": Vector2i(int(edge["b"][0]), int(edge["b"][1]))})
+	slot_bindings.clear()
+	var saved_bindings: Dictionary = data.get("slot_bindings", {})
+	for key in saved_bindings:
+		var parts := String(key).split(",")
+		if parts.size() != 2:
+			continue
+		slot_bindings[Vector2i(int(parts[0]), int(parts[1]))] = int(saved_bindings[key])
+	slot_cleared.clear()
+	for slot in state.cleared_slots:
+		slot_cleared[int(slot)] = true
+	engine = RuleEngine.new()
+	engine.setup(session.grid, RuleEngine.load_recipe_library(), session.propagation_virtual_edges(), state.seed_value + state.floor)
+	engine.restore_snapshot(data.get("engine", {}))
+	build_controller = BuildController.new(session)
+	combat = CombatController.new(session, engine)
+	active_slot_index = -1
+	phase = Phase.BUILD
+	session.phase = DungeonSession.Phase.EXPLORE
+	session.enter_build_node()
+	state.phase = &"build"
+	current_offer.clear()
+	for offer_id in data.get("offer", []):
+		var offer_def := _room_def(StringName(offer_id))
+		if offer_def != null:
+			current_offer.append(offer_def)
+	if current_offer.is_empty():
+		current_offer = _make_offer()
+	return true
 
 
 ## Automation helper (M4 acceptance): tries offers/cells/orientations until one
@@ -465,6 +643,13 @@ func _offer_ids() -> Array[StringName]:
 		if def != null:
 			ids.append(def.id)
 	return ids
+
+
+func _has_placed_neighbor(cell: Vector2i, placed_cells: Dictionary) -> bool:
+	for dir in DoorSpec.all_dirs():
+		if placed_cells.has(cell + DoorSpec.delta(dir)):
+			return true
+	return false
 
 
 func _free_cells_sorted() -> Array[Vector2i]:

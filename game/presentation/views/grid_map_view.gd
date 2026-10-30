@@ -13,6 +13,8 @@ const COLOR_GHOST_BAD := Color(1.0, 0.35, 0.35, 0.45)
 var grid: DungeonGrid = null
 var current_cell: Vector2i = Vector2i(-1, -1)
 var build_controller: BuildController = null
+var preview_cell: Vector2i = Vector2i(-1, -1)
+var preview_valid: bool = false
 
 
 func setup(p_grid: DungeonGrid) -> void:
@@ -27,6 +29,12 @@ func set_current(cell: Vector2i) -> void:
 
 func set_build_controller(controller: BuildController) -> void:
 	build_controller = controller
+	queue_redraw()
+
+
+func set_preview(cell: Vector2i, valid: bool) -> void:
+	preview_cell = cell
+	preview_valid = valid
 	queue_redraw()
 
 
@@ -54,3 +62,6 @@ func _draw() -> void:
 		if grid.in_bounds(target):
 			var ghost_color := COLOR_GHOST_OK if build_controller.preview_valid() else COLOR_GHOST_BAD
 			draw_rect(cell_rect(target), ghost_color, true)
+	elif preview_cell != Vector2i(-1, -1) and grid != null and grid.in_bounds(preview_cell):
+		var ghost_color := COLOR_GHOST_OK if preview_valid else COLOR_GHOST_BAD
+		draw_rect(cell_rect(preview_cell), ghost_color, true)
