@@ -17,6 +17,7 @@ var room_def: RoomDef = null
 var room_instance: RoomInstance = null
 var player_local: Vector2i = Vector2i(-1, -1)
 var rule_engine: RuleEngine = null
+var combat_units: Array[Unit] = []
 
 
 func _ready() -> void:
@@ -43,6 +44,11 @@ func set_player_cell(cell: Vector2i) -> void:
 
 func set_rule_engine(engine: RuleEngine) -> void:
 	rule_engine = engine
+	queue_redraw()
+
+
+func set_combat_units(units: Array[Unit]) -> void:
+	combat_units = units.duplicate()
 	queue_redraw()
 
 
@@ -95,6 +101,15 @@ func _draw() -> void:
 		draw_rect(Rect2(tile_rect(spawn).position + Vector2(4, 4), tile_rect(spawn).size - Vector2(8, 8)), COLOR_SPAWN, false, 2.0)
 	if rule_engine != null and room_instance != null:
 		_draw_channel_overlay()
+	for unit in combat_units:
+		if not unit.alive or unit.team != Unit.TEAM_ENEMY:
+			continue
+		var center := tile_center(unit.local_cell)
+		draw_circle(center, TILE_SIZE * 0.32, Color("e05555"))
+		var bar := Rect2(center + Vector2(-TILE_SIZE * 0.35, -TILE_SIZE * 0.52), Vector2(TILE_SIZE * 0.7, 3.0))
+		draw_rect(bar, Color(0.15, 0.15, 0.2), true)
+		var hp_ratio := float(unit.hp) / float(maxi(1, unit.max_hp))
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * hp_ratio, bar.size.y)), Color("ff6b6b"), true)
 	if player_local.x >= 0:
 		draw_circle(tile_center(player_local), TILE_SIZE * 0.32, COLOR_PLAYER)
 

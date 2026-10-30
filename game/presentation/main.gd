@@ -18,6 +18,8 @@ var build_panel: BuildPanel = null
 var status_label: Label = null
 var debug_panel: DebugPanel = null
 var rule_engine: RuleEngine = null
+var combat_controller: CombatController = null
+var combat_hud: CombatHUD = null
 var blueprint_def: RoomDef = null
 
 
@@ -39,7 +41,7 @@ func _setup() -> void:
 	rule_engine.setup(session.grid, RuleEngine.load_recipe_library(), session.propagation_virtual_edges(), 20261030)
 
 	var title := Label.new()
-	title.text = "Folded Dungeon — M1 sandbox（WASD 移动 / Tab 构筑节点 / 地图点击选格）"
+	title.text = "Folded Dungeon — M1/M3 sandbox（WASD 移动 / Tab 构筑 / C 开始战斗 / 地图点击选格）"
 	title.position = Vector2(16, 8)
 	add_child(title)
 
@@ -60,9 +62,15 @@ func _setup() -> void:
 	build_panel.ui_action.connect(_refresh_views)
 
 	debug_panel = DebugPanel.new()
-	debug_panel.position = Vector2(340, 430)
+	debug_panel.position = Vector2(340, 470)
 	add_child(debug_panel)
 	debug_panel.setup(rule_engine, session)
+
+	combat_controller = CombatController.new(session, rule_engine)
+	combat_hud = CombatHUD.new()
+	combat_hud.position = Vector2(340, 320)
+	add_child(combat_hud)
+	combat_hud.setup(combat_controller, session)
 
 	status_label = Label.new()
 	status_label.position = STATUS_POSITION
@@ -77,17 +85,32 @@ func _refresh_views() -> void:
 	rule_engine.sync_rooms()
 	room_view.setup(session.current_room(), session.player.local_cell)
 	room_view.set_rule_engine(rule_engine)
+	if session.phase == DungeonSession.Phase.COMBAT and combat_controller.state != null:
+		room_view.set_combat_units(combat_controller.state.units)
+	else:
+		room_view.set_combat_units([])
 	map_view.set_current(session.current_room_cell())
 	build_panel.refresh()
 	debug_panel.refresh()
-	status_label.text = "阶段：%s    BP：%d    回合：%d\n位置：房间 %s / 格 %s（行动点 %d）" % [
-		_build_phase_name(session.phase),
-		session.grid.build_points,
-		session.turn,
-		str(session.player.room_cell),
-		str(session.player.local_cell),
-		session.player.move_points,
-	]
+	combat_hud.refresh()
+	if session.phase == DungeonSession.Phase.COMBAT and combat_controller.state != null:
+		var combat_state := combat_controller.state
+		var player := combat_state.player_unit()
+		status_label.text = "战斗  round=%d  HP=%d/%d  敌人=%d\n移动 WASD / 攻击 SPACE / 结束回合 ENTER" % [
+			combat_state.round,
+			player.hp if player != null else 0,
+			player.max_hp if player != null else 0,
+			combat_state.living_enemies().size(),
+		]
+	else:
+		status_label.text = "阶段：%s    BP：%d    回合：%d\n位置：房间 %s / 格 %s（行动点 %d）" % [
+			_build_phase_name(session.phase),
+			session.grid.build_points,
+			session.turn,
+			str(session.player.room_cell),
+			str(session.player.local_cell),
+			session.player.move_points,
+		]
 
 
 func _build_phase_name(phase: int) -> String:
@@ -105,6 +128,12 @@ func _build_phase_name(phase: int) -> String:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_C and session.phase == DungeonSession.Phase.EXPLORE:
+			_start_demo_combat()
+			return
+		if session.phase == DungeonSession.Phase.COMBAT:
+			_handle_combat_key(event.keycode)
+			return
 		match event.keycode:
 			KEY_W, KEY_UP:
 				_try_move(DoorSpec.Dir.N)
@@ -134,6 +163,66 @@ func _unhandled_input(event: InputEvent) -> void:
 			var local_position := map_view.to_local(event.position)
 			build_controller.set_cell(map_view.cell_at(local_position))
 			_refresh_views()
+
+
+func _handle_combat_key(keycode: int) -> void:
+	match keycode:
+		KEY_W, KEY_UP:
+			combat_controller.player_move(DoorSpec.Dir.N)
+		KEY_D, KEY_RIGHT:
+			combat_controller.player_move(DoorSpec.Dir.E)
+		KEY_S, KEY_DOWN:
+			combat_controller.player_move(DoorSpec.Dir.S)
+		KEY_A, KEY_LEFT:
+			combat_controller.player_move(DoorSpec.Dir.W)
+		KEY_SPACE:
+			_combat_attack_nearest()
+		KEY_ENTER, KEY_KP_ENTER:
+			combat_controller.end_player_turn()
+	_refresh_views()
+
+
+func _combat_attack_nearest() -> void:
+	if combat_controller.state == null:
+		return
+	var player := combat_controller.state.player_unit()
+	if player == null:
+		return
+	for enemy in combat_controller.state.living_enemies():
+		if combat_controller.state.distance(player, enemy) <= player.attack_range:
+			combat_controller.player_attack(enemy.unit_id)
+			return
+	status_label.text = "没有相邻敌人可攻击"
+
+
+func _start_demo_combat() -> void:
+	if session.phase != DungeonSession.Phase.EXPLORE:
+		return
+	var room := session.current_room()
+	if room == null or room.layout() == null:
+		return
+	var candidate_cells: Array[Vector2i] = [Vector2i(4, 2), Vector2i(6, 4), Vector2i(2, 4)]
+	var enemies: Array[Unit] = []
+	var serial := 1
+	for cell in candidate_cells:
+		if enemies.size() >= 2:
+			break
+		if not room.layout().is_walkable(cell) or cell == session.player.local_cell:
+			continue
+		var enemy := Unit.new(StringName("enemy_%d" % serial), Unit.TEAM_ENEMY)
+		enemy.display_name = "敌人 %d" % serial
+		enemy.max_hp = 4
+		enemy.hp = 4
+		enemy.attack_damage = 1
+		enemy.move_points = 2
+		enemy.local_cell = cell
+		enemies.append(enemy)
+		serial += 1
+	if enemies.is_empty():
+		return
+	combat_controller = CombatController.new(session, rule_engine)
+	if combat_controller.start_encounter(session.current_room_cell(), enemies):
+		_refresh_views()
 
 
 func _try_move(dir: int) -> void:

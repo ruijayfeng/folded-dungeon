@@ -21,6 +21,10 @@ const TEST_SCRIPTS: Array[String] = [
 	"res://tests/scenarios/m2_combo_chain.gd",
 	"res://tests/cases/test_fold_m2.gd",
 	"res://tests/cases/test_m2_visual.gd",
+	"res://tests/cases/test_unit_m3.gd",
+	"res://tests/cases/test_projectile_m3.gd",
+	"res://tests/cases/test_combat_m3.gd",
+	"res://tests/scenarios/m3_battle_layouts.gd",
 	"res://tests/cases/test_scripts_compile.gd",
 ]
 

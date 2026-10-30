@@ -21,11 +21,13 @@ var rng_streams: RngStreams = null
 # fold charge; a fold creates a virtual propagation edge between two rooms.
 var fold_charges: int = 0
 var folded_edges: Array[Dictionary] = []
+var run_over: bool = false
 
 
 func start_run(start_def: RoomDef, start_cell: Vector2i, orientation: int, seed_value: int, starting_bp: int = 10) -> ValidationReport:
 	events.clear()
 	blueprints.clear()
+	run_over = false
 	grid = DungeonGrid.new()
 	grid.set_budget(starting_bp, DungeonGrid.MAX_ROOMS)
 	var report := grid.place_start(start_def, start_cell, orientation)
@@ -197,6 +199,10 @@ func propagation_virtual_edges() -> Array[Dictionary]:
 	for edge in folded_edges:
 		result.append({"a": edge["a"], "b": edge["b"]})
 	return result
+
+
+func record_event(event_type: StringName, data: Dictionary = {}) -> void:
+	_log(event_type, data)
 
 
 func event_types() -> Array[StringName]:

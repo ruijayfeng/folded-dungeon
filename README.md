@@ -2,7 +2,7 @@
 
 > 2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike · Godot 4.x
 >
-> **当前状态（2026-10-30）：Phase 0 / M0 / M1 / M2 已完成。** 规则引擎 MVP 已跑通（58 tests / 819 assertions）：熔炉→毒雾→镜面组合链、爆燃、镜面转向、折叠虚拟边、预览与调试可视化；下一步 M3（战斗最小闭环）。6 项非 M0 决策仍按建议值推进。
+> **当前状态（2026-10-30）：Phase 0 / M0 / M1 / M2 / M3 已完成。** 战斗最小闭环已跑通（69 tests / 893 assertions）：三阶段战斗、敌人 AI、击退/状态/房间危害、镜面反射投射物、同一战斗两种布局结果不同；下一步 M4（垂直切片）。6 项非 M0 决策仍按建议值推进。
 
 ---
 
@@ -16,10 +16,10 @@
 | 开源调研 | ✅ 完成 | 5 个指定项目 + 星标列表 + 20+ 补充候选（`research/01`） |
 | 工具链 | ✅ 就绪 | Godot 4.7.2 本地可无头运行；`.tools/` |
 | AI 开发技能 | ✅ 已安装 | 25 个项目级技能（`.agents/skills/`），DSH 热发现可用 |
-| 工程代码 | ✅ M2 完成 | 探索/构筑闭环 + 规则引擎 MVP；M3 待开始 |
+| 工程代码 | ✅ M3 完成 | 探索/构筑 + 规则引擎 + 战斗闭环；M4 待开始 |
 | 版本管理 | ⛔ 未初始化 | 尚未 `git init`（建议 M0 前初始化） |
 | 待确认决策 | ⏳ 6 项 | D1/D2/D3/D5/D13/B2（见下） |
-| 任务计划 | ✅ 已排好 · Phase 0/M0/M1/M2 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ✅ → M2 ✅ → M3 ⏳（共 49 个可验收 Task） |
+| 任务计划 | ✅ 已排好 · Phase 0–M3 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ✅ → M2 ✅ → M3 ✅ → M4 ⏳（共 49 个可验收 Task） |
 | 评审阻塞项 | ✅ 已修复 | B1 旋转几何 / B2 放置校验 / B3 模拟层污染 / B4 M0 前置错位（见 research/02 修复记录） |
 
 > 结论：**设计层面约 85% 就绪，工程层面 0%。** 现在即可进入 M0，但建议先修 B1–B4（半天内可完成）。
@@ -170,12 +170,29 @@ export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godo
 - `preview_turns(3)` 与真实 tick 事件 JSON 逐条一致；确定性：两次独立引擎事件/状态完全一致；
 - 主场景无头运行退出码 0；`game/tools/godot import` 无 SCRIPT ERROR。
 
+## M3 已完成（2026-10-30）
+
+**产物：**
+- `game/core/combat/unit.gd`：单位属性/状态/克隆（HP、攻击、移动点、burning/poisoned/chilled/charged/stunned）；
+- `game/core/combat/combat_state.gd`：战斗状态（玩家/敌人/环境阶段、攻击、击退+碰撞伤害、占用格）；
+- `game/core/combat/combat_controller.gd`：战斗循环（玩家阶段 → BFS 追击敌人阶段 → 环境阶段 → 胜负结算）；
+- `game/core/combat/projectile_system.gd`：房间级投射物（门到门、镜面转向、箭塔周期射击、事件日志）；
+- 表现层：`CombatHUD`、`RoomView` 敌人/血条渲染、主场景 `C` 键测试战斗（WASD 移动 / SPACE 攻击 / ENTER 结束回合）。
+
+**验收证据：**
+- `game/tools/godot test`：`{"ok": true, "cases": 23, "tests": 69, "assertions": 893, "failed": 0}`；
+- M3 验收场景 `tests/scenarios/m3_battle_layouts.gd`：同一战斗在「空地」与「熔炉+毒雾包围」两种布局下结果不同（plain enemy_hp=4 / combo=1，combo 第 2 回合被环境击杀）；
+- 镜面房把投射物由东转向南命中敌人（`test_projectile_m3`）；毒雾/热浪同时伤害玩家与敌人；击退撞墙额外伤害；
+- 主场景无头运行退出码 0；import 无 SCRIPT ERROR。
+
+**实现差异（已记录）：** 双阶段制替代多单位 initiative；投射物为房间级抽象（逐格弹道后置）；风暴/重力房改写随 M5 内容补。
+
 ## 下一步（按任务计划执行）
 
-完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M3（战斗最小闭环）：
+完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M4（垂直切片）：
 
-1. M3-1 单位/行动经济/行动顺序 → M3-2 玩家行动与目标选择；
-2. M3-3 投射物路径规则（镜面/风暴/重力/折叠边）→ M3-4 危害/状态/击退 → M3-5 敌人 AI；
-3. M3-6 战斗与环境管线整合 → M3-7 M3 验收场景（两种布局结果不同）。
+1. M4-1 Run 状态与种子 → M4-2 楼层节点结构与生成；
+2. M4-3 构筑/奖励/商店/休整循环 → M4-4 Boss 房；
+3. M4-5 楼层推进与结算 → M4-6 垂直切片验收 → M4-7 文档同步。
 
 > 决策未确认时按计划中的 **Assumptions** 建议值推进；已用技能：`godot-project-setup`、`godot-gdscript-headless-testing`、`godot-resources`、`event-bus`。
