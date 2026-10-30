@@ -12,12 +12,13 @@ description: 《折叠地牢》项目上下文与工作约定 — Godot 4.7.2 �
 
 | 需求 | 位置 / 命令 |
 |---|---|
-| 设计文档 | `docs/00`–`docs/03` |
+| 设计文档 | `docs/00`–`docs/08` |
 | 开源项目调研结论 | `research/01-Godot开源项目调研.md` |
 | M0 阻塞项（内部复核） | `research/02-设计文档复核记录.md` |
-| Godot 4.7.2 引擎 | `/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot`（`export GODOT_BIN=...`） |
+| Godot 4.7.2 引擎 | `game/tools/godot`（包装脚本；引擎默认 `.tools/Godot.app`，可用 `GODOT_BIN` 覆盖） |
 | 无头测试 | `game/tools/godot test`（内部自动 import；包装脚本已处理 HOME） |
 | 已安装技能索引 | `.agents/skills/README.md` |
+| GitHub 仓库 | <https://github.com/ruijayfeng/folded-dungeon>（公开，Apache-2.0；第三方内容见 `THIRD_PARTY_NOTICES.md`） |
 | **任务推进方案（唯一任务来源）** | **`.agents/plans/2026-10-30-任务推进方案.md`** |
 
 ## When to use
@@ -45,22 +46,24 @@ description: 《折叠地牢》项目上下文与工作约定 — Godot 4.7.2 �
 | `docs/01-设计理解与系统拆解.md` | 概念理解、四层循环、系统 P0/P1/P2、规则模型、体验样例 |
 | `docs/02-补全设计与待确认清单.md` | D1–D15 决策 + AI 补全（折叠/12 房间/战斗/经济/术语） |
 | `docs/03-技术方案与里程碑.md` | 架构（sim/view 分离）、数据模型、算法、测试、M0–M5 |
+| `docs/04`–`docs/08` | 垂直切片验收、GUI 运行层、平衡报告、美术方向、发布检查清单 |
 | `research/01-Godot开源项目调研.md` | 开源项目评估与整合建议 |
 | `.agents/skills/` | 本项目已安装的 Godot/AI 开发技能（见其 README） |
-| `game/` | 待创建：Godot 工程（M0） |
+| `game/` | Godot 4.7 工程（主场景 `presentation/run_mode/run_mode.tscn`；`tools/godot` 包装脚本） |
 
 ## 工具链与命令
 
-- 引擎：**Godot 4.7.2 stable**，本地路径
-  `/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot`
-- 多数 Godot 技能脚本读取 `GODOT_BIN`，先设置：
+- 引擎：**Godot 4.7.2 stable**；优先用仓库包装脚本：
+  `game/tools/godot {import|test|editor|run|gen-data|version}`
+  （自动把 Godot 用户目录固定到 `.tools/godot-home`，不污染本机设置）
+- 多数 Godot 技能脚本读取 `GODOT_BIN`，需要时：
   ```bash
-  export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot"
+  export GODOT_BIN="$(git rev-parse --show-toplevel)/.tools/Godot.app/Contents/MacOS/Godot"  # 其他平台指向已装 Godot 4.7.2
   ```
-- 无头导入（首次/CI）：
-  `"$GODOT_BIN" --headless --path game --editor --quit`
-- 无头测试（M0 起）：`"$GODOT_BIN" --headless --path game --script res://tests/run_tests.gd`
-- 沙箱注意：Godot 写 `user://` 需要 HOME 可写；在受沙箱限制的环境可 `export HOME=/Users/softbook/dev/gmNew/.research/home`。
+- 无头导入（首次/CI）：`"$GODOT_BIN" --headless --path game --import`
+- 无头测试：`game/tools/godot test`（内部自动 import）
+- CI：`.github/workflows/test.yml`（GitHub 上自动下载 Godot 4.7.2 Linux 跑同一套测试）
+- 沙箱注意：Godot 写 `user://` 需要 HOME 可写；包装脚本已把 HOME 指到 `.tools/godot-home`。
 
 ## 技术约定（以 docs/03 为准）
 
@@ -68,7 +71,7 @@ description: 《折叠地牢》项目上下文与工作约定 — Godot 4.7.2 �
 - **确定性**：定点整数通道值（建议 0–1000，阈值 600/300）；命名 RNG 流（run/floor/combat/loot），禁止全局 `randi()`；固定遍历顺序 + tie-breaker；事件日志 = 测试与回放依据。
 - **数据驱动**：房间/配方/敌人用自定义 `Resource`（`.tres`）；`EffectDef` 不可变，运行时状态放 `RoomInstance`；避免 `RoomDef → PackedScene → …` 循环依赖。
 - **规则模型**：通道（HEAT/TOXIN/COLD/CHARGE/AIRFLOW）+ 排放 + 门对门传导 + 反应配方（条件 + 效果）+ 回合管线（排放→传导→反应→衰减）。
-- **空间**：5×5 宏观房间图（节点=房间，边=双向匹配的门）+ 9×7 微观战斗格；旋转作用于整个房间朝向；折叠 = 虚拟邻接边。
+- **空间**：5×5 宏观房间图（节点=房间，边=双向匹配的门）+ 9×9 微观战斗格；旋转作用于整个房间朝向；折叠 = 虚拟邻接边。
 
 ## 已安装技能怎么用（详见 `.agents/skills/README.md`）
 

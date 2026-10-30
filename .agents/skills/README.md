@@ -14,7 +14,7 @@
 | 400 | user-dsh | `$DSH_HOME/skills`（本机 `~/.dsh/skills`） |
 | 500 | user-agents | `~/.agents/skills` |
 
-`projectRoot` = 包含 `.git` 的最近祖先目录；当前仓库尚未 `git init`，因此等于会话工作目录 `/Users/softbook/dev/gmNew`。**若以后 `git init`，请确保仓库根仍是本目录**（否则技能需迁移到新根下的 `.agents/skills/`）。
+`projectRoot` = 包含 `.git` 的最近祖先目录；本仓库已 `git init`（仓库根 = 本目录），因此 `projectRoot` 即仓库根。若克隆到其他路径，技能仍随仓库生效，无需迁移。本目录随仓库提交到 GitHub；第三方技能许可与清理方式见仓库根 [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md)。
 
 ## 安装清单
 
@@ -49,11 +49,11 @@
 ### 备注 / 已知限制
 
 - 部分外部 skill 的正文会交叉引用**未安装**的兄弟 skill（如 game-dev-agentic 引用 `godot-composition`）。遇到时以已安装技能为准。
-- `game-dev-agentic` 系列为 **LGPL-3.0**：POC 阶段按你的授权直接使用；若未来要闭源发布，需复核其内嵌脚本的许可或改为只参考。
+- `game-dev-agentic` 系列为 **LGPL-3.0**：当前仓库公开且项目整体采用 Apache-2.0，但该系列技能仅作开发辅助、不参与游戏运行时；若未来要闭源分发，建议先删除或替换该系列（见仓库根 `THIRD_PARTY_NOTICES.md`）。
 - 外部来源与提交号、许可证副本见 `research/skills-provenance/`。
-- 技能正文可能要求 `GODOT_BIN` 指向引擎；本项目路径：
+- 技能正文可能要求 `GODOT_BIN` 指向引擎；优先用仓库包装脚本（自动处理 HOME），需要直接指向时：
   ```bash
-  export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot"
+  export GODOT_BIN="$(git rev-parse --show-toplevel)/.tools/Godot.app/Contents/MacOS/Godot"  # macOS 本地引擎
   ```
 
 ## 使用方式

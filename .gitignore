@@ -1,6 +1,17 @@
+# Local-only / generated artifacts
 .tools/
 .tmp/
 .research/
-*.zip
 .godot/
+*.log
+*.tmp
+*.zip
+
+# Build & export outputs
+game/build/
+game/export/
+exports/
+build/
+
+# OS
 .DS_Store

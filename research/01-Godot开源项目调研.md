@@ -469,9 +469,9 @@ https://github.com/sanskar 是一个 GitHub **用户主页**，页面明确显�
 ## 附录 B：兼容性测试方法
 
 ```bash
-# 本地 Godot 4.7.2（macOS universal）
-GD=/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot
-export HOME=/Users/softbook/dev/gmNew/.research/home   # 让 Godot 的用户目录可写（沙箱）
+# 本地 Godot 4.7.2（macOS universal）；在仓库根目录执行
+GD="$(git rev-parse --show-toplevel)/.tools/Godot.app/Contents/MacOS/Godot"
+export HOME="$(git rev-parse --show-toplevel)/.research/home"   # 让 Godot 的用户目录可写（沙箱）
 $GD --headless --path .research/repos/<repo> --editor --quit
 # 判定：输出中无 SCRIPT ERROR / Parse Error（导入解析通过；不代表运行时正确）
 ```

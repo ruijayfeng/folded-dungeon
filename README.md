@@ -1,6 +1,9 @@
-# 《折叠地牢》（Folded Dungeon）— 开发准备仓库
+# 《折叠地牢》（Folded Dungeon）— 可玩原型
 
-> 2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike · Godot 4.x
+[![tests](https://github.com/ruijayfeng/folded-dungeon/actions/workflows/test.yml/badge.svg)](https://github.com/ruijayfeng/folded-dungeon/actions/workflows/test.yml)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
+> 2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike · Godot 4.7 · GDScript
 >
 > **当前状态（2026-10-30）：Phase 0 / M0–M5 已完成（原型收口）。** `31 cases / 86 tests / 1472 assertions` 全绿：12 房间、规则引擎、战斗、单局/楼层、**可玩 GUI 运行层**（`run_mode.tscn`：构筑/探索/战斗/事件/商店/Boss/结算）、构筑节点存档与种子复现。正式美术/音频/Windows 导出仍待外部条件（见 `docs/08`）。
 
@@ -12,17 +15,17 @@
 |---|---|---|
 | 设计理解 | ✅ 完成 | 概念、循环、系统拆解、规则模型、风险（`docs/01`） |
 | 设计补全 | ⚠️ 完成但待确认 | 缺失章节已按原文风格补全并标注（`docs/02`） |
-| 技术方案 | ⚠️ 框架完成，待修阻塞项 | 架构/数据模型/算法/测试/里程碑已写（`docs/03`） |
+| 技术方案 | ✅ 完成 | 架构/数据模型/算法/测试/里程碑（`docs/03`；B1–B4 已修复） |
 | 开源调研 | ✅ 完成 | 5 个指定项目 + 星标列表 + 20+ 补充候选（`research/01`） |
-| 工具链 | ✅ 就绪 | Godot 4.7.2 本地可无头运行；`.tools/` |
+| 工具链 | ✅ 就绪 | Godot 4.7.2 可无头运行；CI 自动下载同版本 Linux 引擎 |
 | AI 开发技能 | ✅ 已安装 | 25 个项目级技能（`.agents/skills/`），DSH 热发现可用 |
 | 工程代码 | ✅ M5 完成 | 12 房间 + 规则引擎 + 战斗 + 单局 + **可玩 GUI 运行层** + 存档；原型收口 |
-| 版本管理 | ⛔ 未初始化 | 尚未 `git init`（建议 M0 前初始化） |
-| 待确认决策 | ⏳ 6 项 | D1/D2/D3/D5/D13/B2（见下） |
+| 版本管理 | ✅ 已初始化 | Git `main` 分支 + annotated tags `m0`–`m5`；已上传 GitHub |
+| 待确认决策 | ⏳ 后续迭代 | 原型已按建议默认值实现并冻结（D1/D2/D3/D5/D13，见 `docs/02`） |
 | 任务计划 | ✅ 已排好 · Phase 0–M5 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0–M4 ✅ → M5 ✅（原型收口；M5-6 取消，M5-7 待导出模板） |
 | 评审阻塞项 | ✅ 已修复 | B1 旋转几何 / B2 放置校验 / B3 模拟层污染 / B4 M0 前置错位（见 research/02 修复记录） |
 
-> 结论：**设计层面约 85% 就绪，工程层面 0%。** 现在即可进入 M0，但建议先修 B1–B4（半天内可完成）。
+> 结论：设计 → 工程闭环已跑通，原型可玩（见下方「快速开始」）；剩余为美术/音频/Windows 导出的外部条件项（见 `docs/08`）。
 
 ---
 
@@ -33,7 +36,7 @@
 | [00-原始设计交接文档](docs/00-原始设计交接文档.md) | 用户提供的原始交接文档存档（§5.2 处截断） | 存档 |
 | [01-设计理解与系统拆解](docs/01-设计理解与系统拆解.md) | 游戏概念理解、五条理念的验证标准、四层循环、系统拆解、规则模型推导、设计风险 | ✅ |
 | [02-补全设计与待确认清单](docs/02-补全设计与待确认清单.md) | D1–D15 决策清单、AI 补全设计（折叠机制、12 房间、战斗、经济）、术语表 | ✅（待确认） |
-| [03-技术方案与里程碑](docs/03-技术方案与里程碑.md) | 技术选型、模拟/表现分离架构、数据模型、核心算法、测试策略、M0–M5 里程碑 | ✅（待修 B1–B4） |
+| [03-技术方案与里程碑](docs/03-技术方案与里程碑.md) | 技术选型、模拟/表现分离架构、数据模型、核心算法、测试策略、M0–M5 里程碑 | ✅（B1–B4 已修复） |
 | [research/01-Godot开源项目调研](research/01-Godot开源项目调研.md) | 指定项目评估、补充候选、系统映射、许可证与整合方案 | ✅ |
 | [research/02-设计文档复核记录](research/02-设计文档复核记录.md) | 独立复核：4 个阻塞项 + 11 个重要问题 + 建议 | ✅ |
 | [.agents/skills/README](.agents/skills/README.md) | 项目级 AI 技能索引、用法、许可证与升级方式 | ✅ |
@@ -58,15 +61,16 @@
 
 | 项 | 结论 |
 |---|---|
-| 引擎 | Godot 4.7.2 stable（`.tools/Godot.app`，无头模式实测可用） |
+| 引擎 | Godot 4.7.2 stable（无头模式实测可用；本地引擎放 `.tools/`，或用 `GODOT_BIN` 指定） |
 | 语言 | GDScript |
 | 缺失设计 | 由 AI 按原文风格补全，标注 `【AI 补全 / 待确认】` |
-| 局外成长 / 美术 / 存档 | 不进入首个可玩版本 |
+| 局外成长 / 美术 / 音频 | 不进入首个可玩版本；存档已实现（构筑节点 JSON 快照） |
 | 开源项目 | 调研完成；核心规则自研，周边借鉴 Atrium / wooftactics / Grid Tactics Lite 等（详见 research/01） |
-| 技能 | 25 个项目级 AI 开发技能已安装（`.agents/skills/`） |
+| 技能 | 25 个项目级 AI 开发技能已安装（`.agents/skills/`，随仓库提交） |
 | POC 代码复用 | 2026-10-30 设计者授权：质量没问题可直接用 MIT/Apache 代码，暂不纠结版权；来源记录于 `research/skills-provenance/` |
+| 许可证 | 自有代码 **Apache-2.0**；`.agents/skills/`、`research/` 内第三方内容沿用各自许可（见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)） |
 
-## 待设计者确认（6 项，最小集合）
+## 待设计者确认（原型已按建议默认值实现，后续迭代再定）
 
 1. **D1**「折叠」是机制还是隐喻？（建议：轻量版空间折叠 + 房间折叠）
 2. **D2** 战斗粒度：单角色战术 / 小队战术？（建议：单角色）
@@ -91,25 +95,56 @@
 ## 仓库结构
 
 ```text
-gmNew/
-├── README.md                  # 本文件
-├── docs/                      # 设计理解 / 补全设计 / 技术方案
-├── research/                  # 开源调研报告、设计复核记录、技能来源
+folded-dungeon/
+├── README.md                  # 本文件（状态 / 快速开始 / 文档导航）
+├── LICENSE                    # Apache-2.0（自有代码）
+├── THIRD_PARTY_NOTICES.md     # 第三方技能/调研内容的许可与来源
+├── docs/                      # 00 原始交接 → 08 发布检查清单
+├── research/                  # 开源调研、设计复核记录、技能来源
 │   ├── 01-Godot开源项目调研.md
 │   ├── 02-设计文档复核记录.md
 │   └── skills-provenance/     # 技能仓库提交号与许可证副本
-├── .agents/skills/            # 25 个项目级 AI 开发技能（提交 Git）
+├── .agents/                   # 项目级 AI 技能（25 个）与任务推进方案
+│   ├── plans/2026-10-30-任务推进方案.md
+│   └── skills/
+├── .github/workflows/test.yml # CI：无头测试（Godot 4.7.2 Linux）
 ├── tools/install-skills.py    # 技能安装/升级脚本
-├── .tools/Godot.app           # 本地 Godot 4.7.2（不提交 Git）
-├── .research/                 # 调研用仓库缓存（不提交 Git，约 220MB）
-└── game/                      # Godot 工程（M0 创建）
+└── game/                      # Godot 4.7 工程（主场景 run_mode.tscn）
+    ├── core/                  # 纯模拟层（无场景依赖，可无头测试）
+    ├── data/                  # 房间/配方 Resource（.tres）
+    ├── presentation/          # 表现层（场景、UI、占位色块）
+    ├── tests/                 # 无头测试套件（31 cases / 86 tests）
+    └── tools/godot            # 引擎包装脚本（import/test/run/gen-data）
 ```
 
-## 本地工具链
+本地缓存（**不提交 Git**）：`.tools/`（本地 Godot 4.7.2，约 340MB）、`.research/`（调研仓库缓存，约 220MB）、`game/.godot/`（导入缓存）、`.tmp/`（临时日志）。
+
+## 快速开始
+
+前置：**Godot 4.7.2 stable**（标准版即可，无需 .NET）。
+
+```bash
+git clone https://github.com/ruijayfeng/folded-dungeon.git
+cd folded-dungeon
+
+# 引擎：任选其一
+#   A. macOS 官方包解压后放到 .tools/Godot.app（仓库默认路径）
+#   B. 已安装的引擎直接用 GODOT_BIN 指定
+export GODOT_BIN=/path/to/Godot_v4.7.2-stable
+
+game/tools/godot test    # 无头回归：31 cases / 86 tests / 1472 assertions
+game/tools/godot run     # 打开可玩 GUI 运行层
+```
+
+- `game/tools/godot` 支持 `import | test | editor | run | gen-data | version`，会把 Godot 用户目录固定到 `.tools/godot-home`（gitignored），不污染本机 Godot 设置。
+- 玩法、按键与界面：见 [docs/05-GUI运行层说明](docs/05-GUI运行层说明.md)。
+- 不装引擎也可以看结果：CI 在每次 push/PR 用 Godot 4.7.2 Linux 版跑同一套测试。
+
+## 本地工具链（维护者）
 
 ```bash
 # 引擎版本
-.tools/Godot.app/Contents/MacOS/Godot --version
+game/tools/godot version
 # => 4.7.2.stable.official.ed1daf0bf
 
 # 技能维护（源仓库缓存于 .research/skills-repos）
@@ -120,16 +155,20 @@ python3 tools/install-skills.py --update
 game/tools/godot run
 
 # 无头测试
-export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godot"
+game/tools/godot test
+
+# 直接调用引擎（等价）
+export GODOT_BIN="$(git rev-parse --show-toplevel)/.tools/Godot.app/Contents/MacOS/Godot"
 "$GODOT_BIN" --headless --path game --script res://tests/run_tests.gd
 ```
 
 ## 版本控制（Git）
 
 - **分支：** 原型期单分支 `main`；重大实验用 `exp/<topic>` 分支，合并后删除。
+- **远程：** GitHub [ruijayfeng/folded-dungeon](https://github.com/ruijayfeng/folded-dungeon)（公开，Apache-2.0）。
 - **提交粒度：** 一个 Task（或一组强相关改动）一次提交；提交信息格式 `TaskID: 摘要`（如 `M0-4: 房间图连通性校验`），里程碑收口用 `M0/M1: ...`。
 - **提交前检查：** `game/tools/godot test` 必须全绿、`game/tools/godot import` 无 SCRIPT ERROR；只提交预期文件。
-- **里程碑标签：** 每个里程碑完成打 annotated tag：`m0`、`m1`…（当前已有 `m0`）。
+- **里程碑标签：** 每个里程碑完成打 annotated tag：`m0`–`m5`（原型收口 `m5`）；标签随 `git push --tags` 同步到 GitHub。
 - **不提交：** `.godot/`、`.tools/`、`.research/`、`.tmp/`、构建产物；`.gitattributes` 统一文本为 LF，图片/音频按二进制处理。
 - **回退：** 小问题 `git revert <sha>`；里程碑级回退 checkout 对应 tag 后新开提交，不改写已发布历史。
 
@@ -238,6 +277,12 @@ export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godo
 2. 下载 Godot 4.7.2 导出模板 → 运行 `game/tools/export_windows.sh` → Windows 冒烟测试；
 3. 人工 GUI 试玩一局（按 `docs/05` 清单），记录手感/可读性/卡死问题；
 4. 评估 **D10 局外成长**（解锁房间/初始能力）与折叠移动、逐格弹道等扩展；
-5. 接入 CI（GitHub Actions）跑 `game/tools/godot test`。
+5. 持续集成已接入：`.github/workflows/test.yml`（Godot 4.7.2 Linux 无头测试，push/PR 自动跑）。
 
 > 决策未确认时按计划中的 **Assumptions** 建议值推进；已用技能：`godot-project-setup`、`godot-gdscript-headless-testing`、`godot-resources`、`event-bus`。
+
+## 许可证
+
+- **自有代码与文档：** [Apache License 2.0](LICENSE)。
+- **第三方内容：** `.agents/skills/` 下 24 个外部技能分别来自 MIT / Apache-2.0 / LGPL-3.0 仓库，`research/` 内含调研摘录；来源提交号与许可证副本见 [`research/skills-provenance/`](research/skills-provenance/PROVENANCE.md)，汇总说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。这些内容的许可独立于本仓库整体，复用时请遵守各自条款。
+- **游戏内容：** 设计文档、房间/配方数值、平衡数据为本项目原创（含已标注 `【AI 补全 / 待确认】` 的部分）。

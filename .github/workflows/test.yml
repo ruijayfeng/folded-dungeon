@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  headless-tests:
+    name: Headless tests (Godot 4.7.2)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -fsSL -o godot.zip "$url"
+          unzip -q godot.zip
+          bin="Godot_v${GODOT_VERSION}_linux.x86_64"
+          chmod +x "$bin"
+          echo "GODOT_BIN=$PWD/$bin" >> "$GITHUB_ENV"
+
+      - name: Import project
+        run: '"$GODOT_BIN" --headless --path game --import'
+
+      - name: Run headless tests
+        run: '"$GODOT_BIN" --headless --path game --script res://tests/run_tests.gd'
+
+      - name: Smoke test main scene (headless)
+        run: '"$GODOT_BIN" --headless --path game --quit-after 2'
