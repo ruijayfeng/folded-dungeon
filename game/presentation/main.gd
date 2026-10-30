@@ -16,6 +16,8 @@ var map_view: GridMapView = null
 var room_view: RoomView = null
 var build_panel: BuildPanel = null
 var status_label: Label = null
+var debug_panel: DebugPanel = null
+var rule_engine: RuleEngine = null
 var blueprint_def: RoomDef = null
 
 
@@ -33,6 +35,8 @@ func _setup() -> void:
 		return
 	session.acquire_blueprint(blueprint_def)
 	build_controller = BuildController.new(session)
+	rule_engine = RuleEngine.new()
+	rule_engine.setup(session.grid, RuleEngine.load_recipe_library(), session.propagation_virtual_edges(), 20261030)
 
 	var title := Label.new()
 	title.text = "Folded Dungeon — M1 sandbox（WASD 移动 / Tab 构筑节点 / 地图点击选格）"
@@ -55,6 +59,11 @@ func _setup() -> void:
 	build_panel.setup(session, build_controller, blueprint_def)
 	build_panel.ui_action.connect(_refresh_views)
 
+	debug_panel = DebugPanel.new()
+	debug_panel.position = Vector2(340, 430)
+	add_child(debug_panel)
+	debug_panel.setup(rule_engine, session)
+
 	status_label = Label.new()
 	status_label.position = STATUS_POSITION
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -65,9 +74,12 @@ func _setup() -> void:
 
 
 func _refresh_views() -> void:
+	rule_engine.sync_rooms()
 	room_view.setup(session.current_room(), session.player.local_cell)
+	room_view.set_rule_engine(rule_engine)
 	map_view.set_current(session.current_room_cell())
 	build_panel.refresh()
+	debug_panel.refresh()
 	status_label.text = "阶段：%s    BP：%d    回合：%d\n位置：房间 %s / 格 %s（行动点 %d）" % [
 		_build_phase_name(session.phase),
 		session.grid.build_points,
@@ -127,6 +139,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _try_move(dir: int) -> void:
 	var result := session.try_move(dir)
 	if result["ok"]:
+		rule_engine.tick()
 		_refresh_views()
 	else:
 		status_label.text = "移动失败：%s" % str(result["reason"])

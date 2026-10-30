@@ -17,6 +17,11 @@ var events: Array[Dictionary] = []
 var run_seed: int = 0
 var rng_streams: RngStreams = null
 
+# Fold MVP (D1 light version): placing a room tagged fold_chamber grants one
+# fold charge; a fold creates a virtual propagation edge between two rooms.
+var fold_charges: int = 0
+var folded_edges: Array[Dictionary] = []
+
 
 func start_run(start_def: RoomDef, start_cell: Vector2i, orientation: int, seed_value: int, starting_bp: int = 10) -> ValidationReport:
 	events.clear()
@@ -147,7 +152,51 @@ func build_room(def: RoomDef, cell: Vector2i, orientation: int = 0) -> Validatio
 			"orientation": orientation,
 			"cost": def.build_cost,
 		})
+		if def.tags.has(&"fold_chamber"):
+			fold_charges += 1
+			_log("fold_charge_gained", {"room_def": def.id, "charges": fold_charges})
 	return report
+
+
+## Creates a virtual propagation edge (fold) between two placed rooms.
+func activate_fold(cell_a: Vector2i, cell_b: Vector2i) -> ValidationReport:
+	var report := ValidationReport.new()
+	if phase != Phase.BUILD:
+		report.add_error(&"WRONG_PHASE", "fold can only be activated during a build node")
+		return report
+	if fold_charges <= 0:
+		report.add_error(&"NO_FOLD_CHARGE", "no fold charge available")
+		return report
+	if cell_a == cell_b:
+		report.add_error(&"INVALID_FOLD", "cannot fold a room to itself")
+		return report
+	if grid.get_room(cell_a) == null or grid.get_room(cell_b) == null:
+		report.add_error(&"ROOM_NOT_FOUND", "%s / %s" % [str(cell_a), str(cell_b)])
+		return report
+	for edge in folded_edges:
+		if (edge["a"] == cell_a and edge["b"] == cell_b) or (edge["a"] == cell_b and edge["b"] == cell_a):
+			report.add_error(&"ALREADY_FOLDED", "%s <-> %s" % [str(cell_a), str(cell_b)])
+			return report
+	fold_charges -= 1
+	folded_edges.append({"a": cell_a, "b": cell_b})
+	_log("fold_activated", {"a": cell_a, "b": cell_b, "charges_left": fold_charges})
+	return report
+
+
+func release_fold(index: int) -> bool:
+	if index < 0 or index >= folded_edges.size():
+		return false
+	var edge: Dictionary = folded_edges[index]
+	folded_edges.remove_at(index)
+	_log("fold_released", {"a": edge["a"], "b": edge["b"]})
+	return true
+
+
+func propagation_virtual_edges() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for edge in folded_edges:
+		result.append({"a": edge["a"], "b": edge["b"]})
+	return result
 
 
 func event_types() -> Array[StringName]:

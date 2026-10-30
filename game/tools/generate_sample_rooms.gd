@@ -1,22 +1,49 @@
 extends SceneTree
-## Generates the M0 sample RoomDef resources through ResourceSaver
-## (never hand-edit .tres files). Run with: game/tools/godot gen-data
+## Generates data-driven content through ResourceSaver (never hand-edit .tres).
+## Run with: game/tools/godot gen-data
+##
+## M0: start_room / combat_room
+## M2: 6 rule rooms + 3 reaction recipes
 
-const START_PATH := "res://data/rooms/start_room.tres"
-const COMBAT_PATH := "res://data/rooms/combat_room.tres"
+const ROOM_PATHS := {
+	"start_room": "res://data/rooms/start_room.tres",
+	"combat_room": "res://data/rooms/combat_room.tres",
+	"forge_room": "res://data/rooms/forge_room.tres",
+	"toxin_room": "res://data/rooms/toxin_room.tres",
+	"frost_room": "res://data/rooms/frost_room.tres",
+	"mirror_room": "res://data/rooms/mirror_room.tres",
+	"accumulator_room": "res://data/rooms/accumulator_room.tres",
+	"ballista_room": "res://data/rooms/ballista_room.tres",
+}
+const RECIPE_PATHS := {
+	"combustion": "res://data/recipes/combustion.tres",
+	"thermal_neutralize": "res://data/recipes/thermal_neutralize.tres",
+	"charge_release": "res://data/recipes/charge_release.tres",
+}
 
 
 func _initialize() -> void:
 	var errors := 0
-	errors += _save_room(_make_start_room(), START_PATH)
-	errors += _save_room(_make_combat_room(), COMBAT_PATH)
+	errors += _save_room(_make_start_room(), ROOM_PATHS["start_room"])
+	errors += _save_room(_make_combat_room(), ROOM_PATHS["combat_room"])
+	errors += _save_room(_make_forge_room(), ROOM_PATHS["forge_room"])
+	errors += _save_room(_make_toxin_room(), ROOM_PATHS["toxin_room"])
+	errors += _save_room(_make_frost_room(), ROOM_PATHS["frost_room"])
+	errors += _save_room(_make_mirror_room(), ROOM_PATHS["mirror_room"])
+	errors += _save_room(_make_accumulator_room(), ROOM_PATHS["accumulator_room"])
+	errors += _save_room(_make_ballista_room(), ROOM_PATHS["ballista_room"])
+	errors += _save_resource(_make_combustion_recipe(), RECIPE_PATHS["combustion"])
+	errors += _save_resource(_make_thermal_neutralize_recipe(), RECIPE_PATHS["thermal_neutralize"])
+	errors += _save_resource(_make_charge_release_recipe(), RECIPE_PATHS["charge_release"])
 	if errors > 0:
-		push_error("sample room generation failed: %d error(s)" % errors)
+		push_error("content generation failed: %d error(s)" % errors)
 		quit(1)
 		return
-	print("[M0] sample rooms generated: %s, %s" % [START_PATH, COMBAT_PATH])
+	print("[M2] content generated: %d rooms, %d recipes" % [ROOM_PATHS.size(), RECIPE_PATHS.size()])
 	quit(0)
 
+
+# --- rooms -----------------------------------------------------------------
 
 func _make_base_layout() -> RoomLayout:
 	var layout := RoomLayout.new()
@@ -28,40 +55,245 @@ func _make_base_layout() -> RoomLayout:
 	return layout
 
 
-func _make_start_room() -> RoomDef:
+func _basic_room(room_id: StringName, display_name: String, category: int, door_mask: int, build_cost: int) -> RoomDef:
 	var def := RoomDef.new()
-	def.id = &"start_room"
-	def.display_name = "起始房间"
-	def.category = RoomDef.Category.SPECIAL
-	def.door_mask = DoorSpec.Dir.N | DoorSpec.Dir.E
-	def.build_cost = 0
+	def.id = room_id
+	def.display_name = display_name
+	def.category = category
+	def.door_mask = door_mask
+	def.build_cost = build_cost
 	def.layout = _make_base_layout()
-	var tags: Array[StringName] = [&"start"]
-	def.tags = tags
+	return def
+
+
+func _make_start_room() -> RoomDef:
+	var def := _basic_room(&"start_room", "起始房间", RoomDef.Category.SPECIAL, DoorSpec.Dir.N | DoorSpec.Dir.E, 0)
+	def.tags = _tags([&"start"])
 	def.description = "玩家进入本层的位置；带北门与东门。"
 	return def
 
 
 func _make_combat_room() -> RoomDef:
-	var def := RoomDef.new()
-	def.id = &"combat_room"
-	def.display_name = "战斗房间"
-	def.category = RoomDef.Category.COMBAT
-	def.door_mask = DoorSpec.Dir.N | DoorSpec.Dir.E | DoorSpec.Dir.S | DoorSpec.Dir.W
-	def.build_cost = 1
-	def.layout = _make_base_layout()
-	var tags: Array[StringName] = [&"combat"]
-	def.tags = tags
+	var def := _basic_room(&"combat_room", "战斗房间", RoomDef.Category.COMBAT, 15, 1)
+	def.tags = _tags([&"combat"])
 	def.description = "普通战斗房间；四面均有门，便于构筑连接。"
 	return def
 
+
+func _make_forge_room() -> RoomDef:
+	var def := _basic_room(&"forge_room", "熔炉房", RoomDef.Category.ELEMENT, DoorSpec.Dir.E, 1)
+	def.tags = _tags([&"heat_source"])
+	def.emitters = _emitters([_emitter(Channels.Channel.HEAT, 250)])
+	def.description = "每回合积累热量（+250）；热量沿门向较冷的相邻房间传导。"
+	return def
+
+
+func _make_toxin_room() -> RoomDef:
+	var def := _basic_room(&"toxin_room", "毒雾房", RoomDef.Category.ELEMENT, DoorSpec.Dir.W | DoorSpec.Dir.E, 1)
+	def.tags = _tags([&"gas_source", &"flammable"])
+	def.emitters = _emitters([_emitter(Channels.Channel.TOXIN, 200)])
+	def.description = "每回合产生毒雾（+200）；与高温叠加会触发爆燃。"
+	return def
+
+
+func _make_frost_room() -> RoomDef:
+	var def := _basic_room(&"frost_room", "冰霜房", RoomDef.Category.ELEMENT, 15, 1)
+	def.tags = _tags([&"cold_source"])
+	def.emitters = _emitters([_emitter(Channels.Channel.COLD, 200)])
+	def.description = "每回合积累寒冷（+200）；与热量相消（热/冷各 -200）。"
+	return def
+
+
+func _make_mirror_room() -> RoomDef:
+	var def := _basic_room(&"mirror_room", "镜面房", RoomDef.Category.CONVERSION, DoorSpec.Dir.W | DoorSpec.Dir.S, 1)
+	def.tags = _tags([&"mirror"])
+	def.wave_redirect_steps = 1
+	def.description = "进入本房间的波/射束顺时针转向 90° 后继续传播。"
+	return def
+
+
+func _make_accumulator_room() -> RoomDef:
+	var def := _basic_room(&"accumulator_room", "蓄能房", RoomDef.Category.TRANSFER, 15, 1)
+	def.tags = _tags([&"charge_storage"])
+	def.absorb_channel = Channels.Channel.CHARGE
+	def.absorb_percent = 50
+	def.description = "每回合吸收相邻房间 50% 的能量；能量达到 600 时释放（各相邻 +100）。"
+	return def
+
+
+func _make_ballista_room() -> RoomDef:
+	var def := _basic_room(&"ballista_room", "箭塔房", RoomDef.Category.COMBAT, DoorSpec.Dir.N | DoorSpec.Dir.E, 1)
+	def.tags = _tags([&"turret"])
+	def.periodic_turns = 2
+	def.periodic_event = &"turret_fire"
+	def.description = "每 2 回合向朝向方向发射一次投射物（M3 接入弹道）。"
+	return def
+
+
+# --- recipes ---------------------------------------------------------------
+
+func _make_combustion_recipe() -> ReactionRecipe:
+	var recipe := ReactionRecipe.new()
+	recipe.id = &"combustion"
+	recipe.display_name = "爆燃"
+	recipe.priority = 20
+	recipe.cooldown_turns = 1
+	recipe.max_triggers_per_turn = 1
+	recipe.event_id = &"combustion"
+	var conditions: Array[ConditionDef] = [
+		_tag_condition(&"gas_source"),
+		_condition(ConditionDef.Kind.CHANNEL_AT_LEAST, Channels.Channel.HEAT, Channels.HEAT_THRESHOLD),
+		_condition(ConditionDef.Kind.CHANNEL_AT_LEAST, Channels.Channel.TOXIN, Channels.TOXIN_THRESHOLD),
+	]
+	recipe.conditions = conditions
+	var effects: Array[EffectDef] = [
+		_channel_effect(Channels.Channel.HEAT, 300),
+		_channel_effect(Channels.Channel.TOXIN, -500),
+		_state_effect(&"burning", 2),
+		_wave_effect(&"fire", 0, 4),
+	]
+	recipe.effects = effects
+	return recipe
+
+
+func _make_thermal_neutralize_recipe() -> ReactionRecipe:
+	var recipe := ReactionRecipe.new()
+	recipe.id = &"thermal_neutralize"
+	recipe.display_name = "冷热相消"
+	recipe.priority = 10
+	recipe.cooldown_turns = 0
+	recipe.max_triggers_per_turn = 1
+	recipe.event_id = &"thermal_shock"
+	var conditions: Array[ConditionDef] = [
+		_condition(ConditionDef.Kind.CHANNEL_AT_LEAST, Channels.Channel.HEAT, 200),
+		_condition(ConditionDef.Kind.CHANNEL_AT_LEAST, Channels.Channel.COLD, 200),
+	]
+	recipe.conditions = conditions
+	var effects: Array[EffectDef] = [
+		_channel_effect(Channels.Channel.HEAT, -200),
+		_channel_effect(Channels.Channel.COLD, -200),
+	]
+	recipe.effects = effects
+	return recipe
+
+
+func _make_charge_release_recipe() -> ReactionRecipe:
+	var recipe := ReactionRecipe.new()
+	recipe.id = &"charge_release"
+	recipe.display_name = "充能释放"
+	recipe.priority = 30
+	recipe.cooldown_turns = 0
+	recipe.max_triggers_per_turn = 1
+	recipe.event_id = &"charge_burst"
+	var conditions: Array[ConditionDef] = [
+		_condition(ConditionDef.Kind.CHANNEL_AT_LEAST, Channels.Channel.CHARGE, 600),
+	]
+	recipe.conditions = conditions
+	var effects: Array[EffectDef] = [
+		_channel_effect(Channels.Channel.CHARGE, -600),
+		_neighbor_channel_effect(Channels.Channel.CHARGE, 100),
+		_event_effect(&"charge_burst"),
+	]
+	recipe.effects = effects
+	return recipe
+
+
+# --- builders --------------------------------------------------------------
+
+func _tags(values: Array) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for value in values:
+		result.append(value)
+	return result
+
+
+func _emitters(values: Array) -> Array[ChannelEmitter]:
+	var result: Array[ChannelEmitter] = []
+	for value in values:
+		result.append(value)
+	return result
+
+
+func _emitter(channel: int, rate: int) -> ChannelEmitter:
+	var emitter := ChannelEmitter.new()
+	emitter.channel = channel
+	emitter.rate_per_turn = rate
+	emitter.max_value = Channels.MAX_VALUE
+	return emitter
+
+
+func _tag_condition(tag: StringName) -> ConditionDef:
+	var condition := ConditionDef.new()
+	condition.kind = ConditionDef.Kind.HAS_TAG
+	condition.tag = tag
+	return condition
+
+
+func _condition(kind: int, channel: int, threshold: int) -> ConditionDef:
+	var condition := ConditionDef.new()
+	condition.kind = kind
+	condition.channel = channel
+	condition.threshold = threshold
+	return condition
+
+
+func _channel_effect(channel: int, amount: int) -> EffectDef:
+	var effect := EffectDef.new()
+	effect.kind = EffectDef.Kind.ADD_CHANNEL
+	effect.channel = channel
+	effect.amount = amount
+	return effect
+
+
+func _neighbor_channel_effect(channel: int, amount: int) -> EffectDef:
+	var effect := EffectDef.new()
+	effect.kind = EffectDef.Kind.ADD_CHANNEL_TO_NEIGHBORS
+	effect.channel = channel
+	effect.amount = amount
+	return effect
+
+
+func _state_effect(state_name: StringName, duration: int) -> EffectDef:
+	var effect := EffectDef.new()
+	effect.kind = EffectDef.Kind.SET_STATE
+	effect.state_name = state_name
+	effect.duration_turns = duration
+	return effect
+
+
+func _wave_effect(wave_tag: StringName, direction: int, max_steps: int) -> EffectDef:
+	var effect := EffectDef.new()
+	effect.kind = EffectDef.Kind.EMIT_WAVE
+	effect.wave_tag = wave_tag
+	effect.direction = direction
+	effect.max_steps = max_steps
+	return effect
+
+
+func _event_effect(event_id: StringName) -> EffectDef:
+	var effect := EffectDef.new()
+	effect.kind = EffectDef.Kind.EMIT_EVENT
+	effect.event_id = event_id
+	return effect
+
+
+# --- saving ----------------------------------------------------------------
 
 func _save_room(def: RoomDef, path: String) -> int:
 	var def_errors := def.validate()
 	if not def_errors.is_empty():
 		push_error("invalid room '%s': %s" % [path, "; ".join(def_errors)])
 		return 1
-	var result := ResourceSaver.save(def, path)
+	return _save_resource(def, path)
+
+
+func _save_resource(resource: Resource, path: String) -> int:
+	if resource is ReactionRecipe:
+		var recipe_errors := (resource as ReactionRecipe).validate()
+		if not recipe_errors.is_empty():
+			push_error("invalid recipe '%s': %s" % [path, "; ".join(recipe_errors)])
+			return 1
+	var result := ResourceSaver.save(resource, path)
 	if result != OK:
 		push_error("ResourceSaver.save failed for %s: %d" % [path, result])
 		return 1

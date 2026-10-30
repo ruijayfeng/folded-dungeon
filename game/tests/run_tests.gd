@@ -13,6 +13,15 @@ const TEST_SCRIPTS: Array[String] = [
 	"res://tests/cases/test_build_flow.gd",
 	"res://tests/cases/test_room_scenes.gd",
 	"res://tests/scenarios/m1_build_and_enter.gd",
+	"res://tests/cases/test_channels_m2.gd",
+	"res://tests/cases/test_m2_content.gd",
+	"res://tests/cases/test_propagation_m2.gd",
+	"res://tests/cases/test_recipes_m2.gd",
+	"res://tests/cases/test_pipeline_m2.gd",
+	"res://tests/scenarios/m2_combo_chain.gd",
+	"res://tests/cases/test_fold_m2.gd",
+	"res://tests/cases/test_m2_visual.gd",
+	"res://tests/cases/test_scripts_compile.gd",
 ]
 
 
@@ -24,8 +33,8 @@ func _initialize() -> void:
 
 	for script_path in TEST_SCRIPTS:
 		var script := load(script_path) as Script
-		if script == null:
-			failures.append("%s: failed to load" % script_path)
+		if script == null or not script.can_instantiate():
+			failures.append("%s: script failed to compile" % script_path)
 			continue
 		var probe: Variant = script.new()
 		if not (probe is TestCase):
@@ -36,6 +45,7 @@ func _initialize() -> void:
 			failures.append("%s: no test_* methods found" % script_path)
 			continue
 		case_count += 1
+		print("[case] %s" % script_path)
 		for method_name in method_names:
 			var test_case: Variant = script.new()
 			test_case.call(StringName(method_name))

@@ -11,6 +11,12 @@ enum Category { ELEMENT = 0, CONVERSION = 1, TRANSFER = 2, COMBAT = 3, RESOURCE 
 @export var door_mask: int = 0
 @export var layout: RoomLayout = null
 @export var emitters: Array[ChannelEmitter] = []
+@export var transfer_percent: int = 100
+@export var absorb_channel: int = -1
+@export var absorb_percent: int = 0
+@export var wave_redirect_steps: int = 0
+@export var periodic_turns: int = 0
+@export var periodic_event: StringName = &""
 @export var build_cost: int = 1
 @export var tags: Array[StringName] = []
 @export var description: String = ""
@@ -39,6 +45,18 @@ func validate() -> PackedStringArray:
 			errors.append("ROOM_EMITTER_INVALID: %s" % emitter_error)
 	if build_cost < 0:
 		errors.append("ROOM_BUILD_COST_NEGATIVE: %d" % build_cost)
+	if transfer_percent < 0 or transfer_percent > 300:
+		errors.append("ROOM_TRANSFER_PERCENT_INVALID: %d" % transfer_percent)
+	if absorb_channel != -1 and not Channels.is_valid(absorb_channel):
+		errors.append("ROOM_ABSORB_CHANNEL_INVALID: %d" % absorb_channel)
+	if absorb_percent < 0 or absorb_percent > 100:
+		errors.append("ROOM_ABSORB_PERCENT_INVALID: %d" % absorb_percent)
+	if wave_redirect_steps < -3 or wave_redirect_steps > 3:
+		errors.append("ROOM_REDIRECT_STEPS_INVALID: %d" % wave_redirect_steps)
+	if periodic_turns < 0:
+		errors.append("ROOM_PERIODIC_TURNS_INVALID: %d" % periodic_turns)
+	if periodic_turns > 0 and periodic_event == &"":
+		errors.append("ROOM_PERIODIC_EVENT_EMPTY")
 	return errors
 
 

@@ -2,7 +2,7 @@
 
 > 2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike · Godot 4.x
 >
-> **当前状态（2026-10-30）：Phase 0 / M0 / M1 已完成。** 工程骨架、房间图/门校验、确定性基础、探索与构筑闭环均已跑通（40 tests / 653 assertions）；下一步 M2（规则引擎 MVP）。6 项非 M0 决策仍按建议值推进。
+> **当前状态（2026-10-30）：Phase 0 / M0 / M1 / M2 已完成。** 规则引擎 MVP 已跑通（58 tests / 819 assertions）：熔炉→毒雾→镜面组合链、爆燃、镜面转向、折叠虚拟边、预览与调试可视化；下一步 M3（战斗最小闭环）。6 项非 M0 决策仍按建议值推进。
 
 ---
 
@@ -16,10 +16,10 @@
 | 开源调研 | ✅ 完成 | 5 个指定项目 + 星标列表 + 20+ 补充候选（`research/01`） |
 | 工具链 | ✅ 就绪 | Godot 4.7.2 本地可无头运行；`.tools/` |
 | AI 开发技能 | ✅ 已安装 | 25 个项目级技能（`.agents/skills/`），DSH 热发现可用 |
-| 工程代码 | ✅ M1 完成 | 模拟核心 + 探索/构筑闭环 + 占位表现层；M2 待开始 |
+| 工程代码 | ✅ M2 完成 | 探索/构筑闭环 + 规则引擎 MVP；M3 待开始 |
 | 版本管理 | ⛔ 未初始化 | 尚未 `git init`（建议 M0 前初始化） |
 | 待确认决策 | ⏳ 6 项 | D1/D2/D3/D5/D13/B2（见下） |
-| 任务计划 | ✅ 已排好 · Phase 0/M0/M1 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ✅ → M2 ⏳（共 49 个可验收 Task） |
+| 任务计划 | ✅ 已排好 · Phase 0/M0/M1/M2 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ✅ → M2 ✅ → M3 ⏳（共 49 个可验收 Task） |
 | 评审阻塞项 | ✅ 已修复 | B1 旋转几何 / B2 放置校验 / B3 模拟层污染 / B4 M0 前置错位（见 research/02 修复记录） |
 
 > 结论：**设计层面约 85% 就绪，工程层面 0%。** 现在即可进入 M0，但建议先修 B1–B4（半天内可完成）。
@@ -154,12 +154,28 @@ export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godo
 - `game/tools/godot import`：无 SCRIPT ERROR；主场景无头运行退出码 0；
 - 构筑预览/旋转不修改真实布局（快照对比断言）。
 
+## M2 已完成（2026-10-30）
+
+**产物：**
+- `game/core/rules/room_state.gd` / `condition_def.gd` / `effect_def.gd` / `reaction_recipe.gd` / `rule_engine.gd`；
+- 确定性环境管线：排放 → 一跳传导（高→低，源×百分比，同阶段快照）→ 相邻吸收 → 反应配方（优先级 / 冷却 / 每回合上限）→ 衰减 → 周期性事件；CHARGE 守恒，其余为环境场；全定点整数；
+- `game/data/rooms/`：熔炉、毒雾、冰霜、镜面、蓄能、箭塔 6 个规则房间；`game/data/recipes/`：爆燃、冷热相消、充能释放 3 个配方（由 `tools/generate_sample_rooms.gd` 生成）；
+- 预览：`RuleEngine.preview_turns(n)` 克隆状态预演，事件与真实推进逐条一致；
+- 折叠 MVP：折叠房授予折叠充能 → 虚拟传导边（`DungeonSession.activate_fold`；折叠移动留到 M4 折叠 UI）；
+- 表现层：房间通道染色、`DebugPanel`（通道值 + 最近事件）、主场景接入 RuleEngine（移动时推进环境）。
+
+**验收证据：**
+- `game/tools/godot test`：`{"ok": true, "cases": 19, "tests": 58, "assertions": 819, "failed": 0}`，退出码 0；
+- M2 验收场景 `tests/scenarios/m2_combo_chain.gd`：第 1/2/3 回合毒雾房 heat=100/300/600、toxin=200/400/600；第 3 回合爆燃（channels_before 600/600）+ 燃烧状态 + 火焰波经镜面由东转向南命中目标房；
+- `preview_turns(3)` 与真实 tick 事件 JSON 逐条一致；确定性：两次独立引擎事件/状态完全一致；
+- 主场景无头运行退出码 0；`game/tools/godot import` 无 SCRIPT ERROR。
+
 ## 下一步（按任务计划执行）
 
-完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M2（规则引擎 MVP）：
+完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M3（战斗最小闭环）：
 
-1. M2-1 通道状态与排放 → M2-2 门对门传导管线（定死公式，修 I5）→ M2-3 反应配方系统；
-2. M2-4 环境回合管线与事件日志 → M2-5 六个房间数据 → M2-6 构筑预览 API；
-3. M2-7 规则可视化/调试面板 → M2-8 折叠机制 MVP（D1）→ M2-9 M2 验收场景（熔炉+毒雾+镜面）。
+1. M3-1 单位/行动经济/行动顺序 → M3-2 玩家行动与目标选择；
+2. M3-3 投射物路径规则（镜面/风暴/重力/折叠边）→ M3-4 危害/状态/击退 → M3-5 敌人 AI；
+3. M3-6 战斗与环境管线整合 → M3-7 M3 验收场景（两种布局结果不同）。
 
 > 决策未确认时按计划中的 **Assumptions** 建议值推进；已用技能：`godot-project-setup`、`godot-gdscript-headless-testing`、`godot-resources`、`event-bus`。

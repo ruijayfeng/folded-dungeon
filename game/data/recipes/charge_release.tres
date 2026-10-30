@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ReactionRecipe" format=3]
+
+[ext_resource type="Script" path="res://core/rules/condition_def.gd" id="1_xhmoy"]
+[ext_resource type="Script" path="res://core/rules/effect_def.gd" id="2_5m4d8"]
+[ext_resource type="Script" path="res://core/rules/reaction_recipe.gd" id="3_thsdb"]
+
+[sub_resource type="Resource" id="Resource_2eri5"]
+script = ExtResource("1_xhmoy")
+channel = 3
+threshold = 600
+
+[sub_resource type="Resource" id="Resource_d77sw"]
+script = ExtResource("2_5m4d8")
+channel = 3
+amount = -600
+
+[sub_resource type="Resource" id="Resource_rbwaf"]
+script = ExtResource("2_5m4d8")
+kind = 1
+channel = 3
+amount = 100
+
+[sub_resource type="Resource" id="Resource_fr44n"]
+script = ExtResource("2_5m4d8")
+kind = 5
+event_id = &"charge_burst"
+
+[resource]
+script = ExtResource("3_thsdb")
+id = &"charge_release"
+display_name = "充能释放"
+priority = 30
+event_id = &"charge_burst"
+conditions = Array[ExtResource("1_xhmoy")]([SubResource("Resource_2eri5")])
+effects = Array[ExtResource("2_5m4d8")]([SubResource("Resource_d77sw"), SubResource("Resource_rbwaf"), SubResource("Resource_fr44n")])

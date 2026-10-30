@@ -16,6 +16,7 @@ const COLOR_GRID := Color(1.0, 1.0, 1.0, 0.06)
 var room_def: RoomDef = null
 var room_instance: RoomInstance = null
 var player_local: Vector2i = Vector2i(-1, -1)
+var rule_engine: RuleEngine = null
 
 
 func _ready() -> void:
@@ -37,6 +38,11 @@ func setup(instance: RoomInstance, player: Vector2i = Vector2i(-1, -1)) -> void:
 
 func set_player_cell(cell: Vector2i) -> void:
 	player_local = cell
+	queue_redraw()
+
+
+func set_rule_engine(engine: RuleEngine) -> void:
+	rule_engine = engine
 	queue_redraw()
 
 
@@ -87,5 +93,28 @@ func _draw() -> void:
 		draw_rect(tile_rect(local_door_cells()[dir]), COLOR_DOOR, false, 2.0)
 	for spawn in layout.spawn_cells:
 		draw_rect(Rect2(tile_rect(spawn).position + Vector2(4, 4), tile_rect(spawn).size - Vector2(8, 8)), COLOR_SPAWN, false, 2.0)
+	if rule_engine != null and room_instance != null:
+		_draw_channel_overlay()
 	if player_local.x >= 0:
 		draw_circle(tile_center(player_local), TILE_SIZE * 0.32, COLOR_PLAYER)
+
+
+func _draw_channel_overlay() -> void:
+	var state := rule_engine.room_state(room_instance.cell)
+	if state == null:
+		return
+	var tints := {
+		Channels.Channel.HEAT: Color(1.0, 0.25, 0.1),
+		Channels.Channel.TOXIN: Color(0.3, 0.9, 0.2),
+		Channels.Channel.COLD: Color(0.3, 0.8, 1.0),
+		Channels.Channel.CHARGE: Color(1.0, 0.9, 0.2),
+		Channels.Channel.AIRFLOW: Color(0.8, 0.8, 1.0),
+	}
+	var overlay_size := Vector2(DoorSpec.ROOM_SIZE * TILE_SIZE, DoorSpec.ROOM_SIZE * TILE_SIZE)
+	for channel in tints:
+		var value := state.get_channel(channel)
+		if value <= 0:
+			continue
+		var tint: Color = tints[channel]
+		tint.a = clampf(float(value) / float(Channels.MAX_VALUE) * 0.45, 0.05, 0.5)
+		draw_rect(Rect2(Vector2.ZERO, overlay_size), tint, true)

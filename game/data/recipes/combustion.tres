@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="ReactionRecipe" format=3]
+
+[ext_resource type="Script" path="res://core/rules/condition_def.gd" id="1_byn1v"]
+[ext_resource type="Script" path="res://core/rules/effect_def.gd" id="2_rxmhy"]
+[ext_resource type="Script" path="res://core/rules/reaction_recipe.gd" id="3_u6374"]
+
+[sub_resource type="Resource" id="Resource_vlekr"]
+script = ExtResource("1_byn1v")
+kind = 2
+tag = &"gas_source"
+
+[sub_resource type="Resource" id="Resource_fp6y3"]
+script = ExtResource("1_byn1v")
+threshold = 600
+
+[sub_resource type="Resource" id="Resource_g8gb7"]
+script = ExtResource("1_byn1v")
+channel = 1
+threshold = 300
+
+[sub_resource type="Resource" id="Resource_rem6d"]
+script = ExtResource("2_rxmhy")
+amount = 300
+
+[sub_resource type="Resource" id="Resource_qi5oh"]
+script = ExtResource("2_rxmhy")
+channel = 1
+amount = -500
+
+[sub_resource type="Resource" id="Resource_dk4ic"]
+script = ExtResource("2_rxmhy")
+kind = 2
+state_name = &"burning"
+duration_turns = 2
+
+[sub_resource type="Resource" id="Resource_g1m7g"]
+script = ExtResource("2_rxmhy")
+kind = 4
+
+[resource]
+script = ExtResource("3_u6374")
+id = &"combustion"
+display_name = "爆燃"
+priority = 20
+cooldown_turns = 1
+event_id = &"combustion"
+conditions = Array[ExtResource("1_byn1v")]([SubResource("Resource_vlekr"), SubResource("Resource_fp6y3"), SubResource("Resource_g8gb7")])
+effects = Array[ExtResource("2_rxmhy")]([SubResource("Resource_rem6d"), SubResource("Resource_qi5oh"), SubResource("Resource_dk4ic"), SubResource("Resource_g1m7g")])

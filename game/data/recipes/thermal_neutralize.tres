@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ReactionRecipe" format=3]
+
+[ext_resource type="Script" path="res://core/rules/condition_def.gd" id="1_cth2h"]
+[ext_resource type="Script" path="res://core/rules/effect_def.gd" id="2_r1pln"]
+[ext_resource type="Script" path="res://core/rules/reaction_recipe.gd" id="3_cpy8c"]
+
+[sub_resource type="Resource" id="Resource_7ip8w"]
+script = ExtResource("1_cth2h")
+threshold = 200
+
+[sub_resource type="Resource" id="Resource_71abs"]
+script = ExtResource("1_cth2h")
+channel = 2
+threshold = 200
+
+[sub_resource type="Resource" id="Resource_k4kmx"]
+script = ExtResource("2_r1pln")
+amount = -200
+
+[sub_resource type="Resource" id="Resource_80wl1"]
+script = ExtResource("2_r1pln")
+channel = 2
+amount = -200
+
+[resource]
+script = ExtResource("3_cpy8c")
+id = &"thermal_neutralize"
+display_name = "冷热相消"
+priority = 10
+event_id = &"thermal_shock"
+conditions = Array[ExtResource("1_cth2h")]([SubResource("Resource_7ip8w"), SubResource("Resource_71abs")])
+effects = Array[ExtResource("2_r1pln")]([SubResource("Resource_k4kmx"), SubResource("Resource_80wl1")])
