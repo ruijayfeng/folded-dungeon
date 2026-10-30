@@ -116,6 +116,15 @@ export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godo
 "$GODOT_BIN" --headless --path game --script res://tests/run_tests.gd
 ```
 
+## 版本控制（Git）
+
+- **分支：** 原型期单分支 `main`；重大实验用 `exp/<topic>` 分支，合并后删除。
+- **提交粒度：** 一个 Task（或一组强相关改动）一次提交；提交信息格式 `TaskID: 摘要`（如 `M0-4: 房间图连通性校验`），里程碑收口用 `M0/M1: ...`。
+- **提交前检查：** `game/tools/godot test` 必须全绿、`game/tools/godot import` 无 SCRIPT ERROR；只提交预期文件。
+- **里程碑标签：** 每个里程碑完成打 annotated tag：`m0`、`m1`…（当前已有 `m0`）。
+- **不提交：** `.godot/`、`.tools/`、`.research/`、`.tmp/`、构建产物；`.gitattributes` 统一文本为 LF，图片/音频按二进制处理。
+- **回退：** 小问题 `git revert <sha>`；里程碑级回退 checkout 对应 tag 后新开提交，不改写已发布历史。
+
 ## M0 已完成（2026-10-30）
 
 **产物：**
