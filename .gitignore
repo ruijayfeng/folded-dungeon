@@ -1,0 +1,6 @@
+.tools/
+.tmp/
+.research/
+*.zip
+.godot/
+.DS_Store

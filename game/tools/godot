@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Godot wrapper for this project.
+# Keeps Godot's user data inside .tools/godot-home (sandbox-friendly, gitignored)
+# and exposes stable commands: import / test / editor / run / gen-data / version.
+set -euo pipefail
+
+GAME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$GAME_DIR/.." && pwd)"
+GODOT_BIN="${GODOT_BIN:-$REPO_ROOT/.tools/Godot.app/Contents/MacOS/Godot}"
+
+if [[ ! -x "$GODOT_BIN" ]]; then
+  echo "Godot binary not found: $GODOT_BIN" >&2
+  echo "Set GODOT_BIN to a Godot 4.7 executable." >&2
+  exit 1
+fi
+
+export HOME="${GODOT_HOME:-$REPO_ROOT/.tools/godot-home}"
+mkdir -p "$HOME"
+
+cmd="${1:-help}"
+if [[ $# -gt 0 ]]; then shift; fi
+
+import_project() {
+  "$GODOT_BIN" --headless --path "$GAME_DIR" --import >/dev/null 2>&1 || true
+}
+
+case "$cmd" in
+  import)
+    "$GODOT_BIN" --headless --path "$GAME_DIR" --import "$@"
+    ;;
+  editor)
+    "$GODOT_BIN" --headless --path "$GAME_DIR" --editor --quit "$@"
+    ;;
+  test)
+    import_project
+    "$GODOT_BIN" --headless --path "$GAME_DIR" --script res://tests/run_tests.gd "$@"
+    ;;
+  gen-data)
+    import_project
+    "$GODOT_BIN" --headless --path "$GAME_DIR" --script res://tools/generate_sample_rooms.gd "$@"
+    ;;
+  run)
+    "$GODOT_BIN" --path "$GAME_DIR" "$@"
+    ;;
+  version)
+    "$GODOT_BIN" --version
+    ;;
+  help|*)
+    echo "Usage: tools/godot {import|test|editor|run|gen-data|version}"
+    echo "  GODOT_BIN   override engine path"
+    echo "  GODOT_HOME  override engine user-data dir (default: .tools/godot-home)"
+    ;;
+esac
