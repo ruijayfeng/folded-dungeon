@@ -14,6 +14,8 @@ const ROOM_PATHS := {
 	"mirror_room": "res://data/rooms/mirror_room.tres",
 	"accumulator_room": "res://data/rooms/accumulator_room.tres",
 	"ballista_room": "res://data/rooms/ballista_room.tres",
+	"boss_room": "res://data/rooms/boss_room.tres",
+	"corridor_room": "res://data/rooms/corridor_room.tres",
 }
 const RECIPE_PATHS := {
 	"combustion": "res://data/recipes/combustion.tres",
@@ -32,6 +34,8 @@ func _initialize() -> void:
 	errors += _save_room(_make_mirror_room(), ROOM_PATHS["mirror_room"])
 	errors += _save_room(_make_accumulator_room(), ROOM_PATHS["accumulator_room"])
 	errors += _save_room(_make_ballista_room(), ROOM_PATHS["ballista_room"])
+	errors += _save_room(_make_boss_room(), ROOM_PATHS["boss_room"])
+	errors += _save_room(_make_corridor_room(), ROOM_PATHS["corridor_room"])
 	errors += _save_resource(_make_combustion_recipe(), RECIPE_PATHS["combustion"])
 	errors += _save_resource(_make_thermal_neutralize_recipe(), RECIPE_PATHS["thermal_neutralize"])
 	errors += _save_resource(_make_charge_release_recipe(), RECIPE_PATHS["charge_release"])
@@ -118,6 +122,19 @@ func _make_accumulator_room() -> RoomDef:
 	def.absorb_channel = Channels.Channel.CHARGE
 	def.absorb_percent = 50
 	def.description = "每回合吸收相邻房间 50% 的能量；能量达到 600 时释放（各相邻 +100）。"
+	return def
+
+
+func _make_corridor_room() -> RoomDef:
+	var def := _basic_room(&"corridor_room", "走廊房", RoomDef.Category.TRANSFER, DoorSpec.Dir.N, 1)
+	def.description = "只有一扇门的紧凑房间；用于在不规则布局中灵活连接。"
+	return def
+
+
+func _make_boss_room() -> RoomDef:
+	var def := _basic_room(&"boss_room", "Boss 房间", RoomDef.Category.SPECIAL, 15, 2)
+	def.tags = _tags([&"boss"])
+	def.description = "本层最终挑战房间；Boss 会持续向房间注入热量。"
 	return def
 
 

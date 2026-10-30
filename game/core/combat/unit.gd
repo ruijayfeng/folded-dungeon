@@ -20,6 +20,8 @@ var attack_range: int = 1
 var has_acted: bool = false
 var alive: bool = true
 var statuses: Dictionary = {}   # StringName -> remaining turns
+var ability: StringName = &""   # M4 boss ability (e.g. boss_heat)
+var hazard_resist: Array[int] = []
 
 
 func _init(p_unit_id: StringName = &"player", p_team: int = TEAM_PLAYER) -> void:
@@ -107,6 +109,8 @@ func clone() -> Unit:
 	copy.has_acted = has_acted
 	copy.alive = alive
 	copy.statuses = statuses.duplicate()
+	copy.ability = ability
+	copy.hazard_resist = hazard_resist.duplicate()
 	return copy
 
 
@@ -119,4 +123,5 @@ func snapshot() -> Dictionary:
 		"hp": hp,
 		"alive": alive,
 		"statuses": statuses.duplicate(),
+		"ability": ability,
 	}

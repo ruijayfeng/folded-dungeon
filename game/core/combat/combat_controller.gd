@@ -88,6 +88,40 @@ func end_player_turn() -> Array[Dictionary]:
 	return events.slice(start_index, events.size())
 
 
+## Headless/vertical-slice helper: plays the player side greedily until the
+## encounter resolves (attack when adjacent, otherwise step toward the nearest
+## enemy, then end the turn). Used by M4 automated acceptance; not a game rule.
+func auto_resolve(max_rounds: int = 40) -> StringName:
+	var rounds := 0
+	while result == &"" and rounds < max_rounds:
+		rounds += 1
+		if state == null or state.phase != CombatState.PHASE_PLAYER:
+			break
+		var player := state.player_unit()
+		if player == null:
+			break
+		var enemies := state.living_enemies()
+		enemies.sort_custom(_compare_units)
+		if enemies.is_empty():
+			break
+		var target: Unit = enemies[0]
+		while state.distance(player, target) > player.attack_range and player.move_points > 0:
+			var step := _next_step_toward(player, target.local_cell)
+			if step == Vector2i.ZERO:
+				break
+			var dir := DoorSpec.dir_towards(player.local_cell, step)
+			if dir == 0:
+				break
+			var move_result := player_move(dir)
+			if not move_result["ok"]:
+				break
+		if state.distance(player, target) <= player.attack_range:
+			player_attack(target.unit_id)
+		if result == &"":
+			end_player_turn()
+	return result
+
+
 func snapshot() -> Dictionary:
 	return {
 		"result": result,
@@ -179,7 +213,10 @@ func _environment_phase(turn_events: Array[Dictionary]) -> void:
 	if rule_engine != null:
 		rule_engine.sync_rooms()
 		var engine_events := rule_engine.tick()
+		_apply_boss_abilities()
 		_resolve_turret_fire(engine_events, turn_events)
+	else:
+		_apply_boss_abilities()
 	_apply_hazard_damage(turn_events)
 	_check_result()
 
@@ -215,10 +252,10 @@ func _apply_hazard_damage(turn_events: Array[Dictionary]) -> void:
 	for unit in state.living_units():
 		var damage := 0
 		var sources: Array[StringName] = []
-		if heat >= Channels.HEAT_THRESHOLD:
+		if heat >= Channels.HEAT_THRESHOLD and not unit.hazard_resist.has(Channels.Channel.HEAT):
 			damage += HEAT_HAZARD_DAMAGE
 			sources.append(&"heat")
-		if toxin >= Channels.TOXIN_THRESHOLD:
+		if toxin >= Channels.TOXIN_THRESHOLD and not unit.hazard_resist.has(Channels.Channel.TOXIN):
 			damage += TOXIN_HAZARD_DAMAGE
 			sources.append(&"toxin")
 		if unit.has_status(&"burning"):
@@ -244,6 +281,15 @@ func _apply_hazard_damage(turn_events: Array[Dictionary]) -> void:
 			unit.add_status(&"poisoned", 2)
 
 
+func _apply_boss_abilities() -> void:
+	for enemy in state.living_enemies():
+		if enemy.ability != &"boss_heat":
+			continue
+		if rule_engine != null:
+			rule_engine.add_channel(state.room_cell, Channels.Channel.HEAT, 150)
+		_emit(&"boss_ability", {"unit": enemy.unit_id, "ability": enemy.ability, "channel": Channels.Channel.HEAT, "amount": 150})
+
+
 func _is_lethal_hazard(cell: Vector2i, unit: Unit) -> bool:
 	if rule_engine == null:
 		return false
@@ -251,9 +297,9 @@ func _is_lethal_hazard(cell: Vector2i, unit: Unit) -> bool:
 	if room_state == null:
 		return false
 	var damage := 0
-	if room_state.get_channel(Channels.Channel.HEAT) >= Channels.HEAT_THRESHOLD:
+	if room_state.get_channel(Channels.Channel.HEAT) >= Channels.HEAT_THRESHOLD and not unit.hazard_resist.has(Channels.Channel.HEAT):
 		damage += HEAT_HAZARD_DAMAGE
-	if room_state.get_channel(Channels.Channel.TOXIN) >= Channels.TOXIN_THRESHOLD:
+	if room_state.get_channel(Channels.Channel.TOXIN) >= Channels.TOXIN_THRESHOLD and not unit.hazard_resist.has(Channels.Channel.TOXIN):
 		damage += TOXIN_HAZARD_DAMAGE
 	if unit.has_status(&"burning"):
 		damage += 1
