@@ -2,7 +2,7 @@
 
 > 2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike · Godot 4.x
 >
-> **当前状态（2026-10-30）：Phase 0 与 M0 已完成。** 工程骨架、房间图/门校验、确定性基础、无头测试均已跑通（29 tests / 534 assertions）；下一步 M1（探索与构筑闭环）。6 项非 M0 决策仍按建议值推进。
+> **当前状态（2026-10-30）：Phase 0 / M0 / M1 已完成。** 工程骨架、房间图/门校验、确定性基础、探索与构筑闭环均已跑通（40 tests / 653 assertions）；下一步 M2（规则引擎 MVP）。6 项非 M0 决策仍按建议值推进。
 
 ---
 
@@ -16,10 +16,10 @@
 | 开源调研 | ✅ 完成 | 5 个指定项目 + 星标列表 + 20+ 补充候选（`research/01`） |
 | 工具链 | ✅ 就绪 | Godot 4.7.2 本地可无头运行；`.tools/` |
 | AI 开发技能 | ✅ 已安装 | 25 个项目级技能（`.agents/skills/`），DSH 热发现可用 |
-| 工程代码 | ✅ M0 完成 | `game/` 工程 + 房间图/门校验/测试基建；M1 待开始 |
+| 工程代码 | ✅ M1 完成 | 模拟核心 + 探索/构筑闭环 + 占位表现层；M2 待开始 |
 | 版本管理 | ⛔ 未初始化 | 尚未 `git init`（建议 M0 前初始化） |
 | 待确认决策 | ⏳ 6 项 | D1/D2/D3/D5/D13/B2（见下） |
-| 任务计划 | ✅ 已排好 · Phase 0/M0 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ⏳（共 49 个可验收 Task） |
+| 任务计划 | ✅ 已排好 · Phase 0/M0/M1 完成 | [任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)：Phase 0 ✅ → M0 ✅ → M1 ✅ → M2 ⏳（共 49 个可验收 Task） |
 | 评审阻塞项 | ✅ 已修复 | B1 旋转几何 / B2 放置校验 / B3 模拟层污染 / B4 M0 前置错位（见 research/02 修复记录） |
 
 > 结论：**设计层面约 85% 就绪，工程层面 0%。** 现在即可进入 M0，但建议先修 B1–B4（半天内可完成）。
@@ -140,15 +140,26 @@ export GODOT_BIN="/Users/softbook/dev/gmNew/.tools/Godot.app/Contents/MacOS/Godo
 - 主场景无头运行：输出 `[FoldedDungeon] M0 skeleton ready`，退出码 0；
 - 门锚点对齐：4 朝向 × 4 面墙组合单测通过（B1 回归）。
 
+## M1 已完成（2026-10-30）
+
+**产物：**
+- `game/core/run/dungeon_session.gd`：单局会话（4 向移动/穿门/回合/蓝图/阶段状态机/事件日志）；
+- `game/core/run/build_controller.gd` + `game/core/combat/unit.gd`：构筑预览/旋转/确认（复用 `DungeonGrid` 校验）、玩家单位；
+- `game/presentation/`：`RoomView`（9×9 占位色块渲染）、`GridMapView`（5×5 地图 + 构筑 ghost）、`BuildPanel`（阶段/BP/放置/旋转/确认）、`main.gd` 沙盒（WASD 移动、Tab 构筑节点、地图点击选格、R 旋转、Enter 确认）；
+- `game/presentation/rooms/`：`room_template.tscn`、`start_room.tscn`、`combat_room.tscn`。
+
+**验收证据：**
+- `game/tools/godot test`：`{"ok": true, "cases": 10, "tests": 40, "assertions": 653, "failed": 0}`，退出码 0；
+- M1 验收场景 `tests/scenarios/m1_build_and_enter.gd`：探索 → 获得蓝图 → 构筑节点 → 放置房间 → 穿新门，事件序列与门锚点断言通过；
+- `game/tools/godot import`：无 SCRIPT ERROR；主场景无头运行退出码 0；
+- 构筑预览/旋转不修改真实布局（快照对比断言）。
+
 ## 下一步（按任务计划执行）
 
-完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M1（探索与构筑闭环）：
+完整顺序、每个任务的产出与验收标准见 **[任务推进方案](.agents/plans/2026-10-30-任务推进方案.md)**。M2（规则引擎 MVP）：
 
-1. M1-1 房间内部 TileMapLayer 模板与两个真实房间场景；
-2. M1-2 回合制房间内移动/穿门；
-3. M1-3 5×5 地图视图与房间切换；
-4. M1-4 构筑 UI 与放置预览；
-5. M1-5 探索/构筑阶段状态机；
-6. M1-6 M1 验收场景。
+1. M2-1 通道状态与排放 → M2-2 门对门传导管线（定死公式，修 I5）→ M2-3 反应配方系统；
+2. M2-4 环境回合管线与事件日志 → M2-5 六个房间数据 → M2-6 构筑预览 API；
+3. M2-7 规则可视化/调试面板 → M2-8 折叠机制 MVP（D1）→ M2-9 M2 验收场景（熔炉+毒雾+镜面）。
 
 > 决策未确认时按计划中的 **Assumptions** 建议值推进；已用技能：`godot-project-setup`、`godot-gdscript-headless-testing`、`godot-resources`、`event-bus`。

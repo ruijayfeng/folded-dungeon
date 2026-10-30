@@ -9,6 +9,10 @@ const TEST_SCRIPTS: Array[String] = [
 	"res://tests/cases/test_doors.gd",
 	"res://tests/cases/test_grid.gd",
 	"res://tests/scenarios/m0_build_layout.gd",
+	"res://tests/cases/test_movement.gd",
+	"res://tests/cases/test_build_flow.gd",
+	"res://tests/cases/test_room_scenes.gd",
+	"res://tests/scenarios/m1_build_and_enter.gd",
 ]
 
 
