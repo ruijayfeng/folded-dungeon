@@ -44,7 +44,7 @@
   <img src="./assets/readme/prototype.png" width="100%" alt="M6-1 2.5D 运行层实机截图：3D 石材地牢房间、火把与火盆、AI 立绘骑士与怪物、皮革悬浮 HUD">
 </p>
 <p align="center">
-  <sub>M6-1 2.5D 运行层实机（第一版，质量门打磨中）· 操作见 <a href="docs/05-GUI运行层说明.md">docs/05</a></sub>
+  <sub>M6-1 2.5D 运行层实机（v2 第一轮打磨，质量门评审中）· 操作见 <a href="docs/05-GUI运行层说明.md">docs/05</a></sub>
 </p>
 
 ## 房间之间怎么联动

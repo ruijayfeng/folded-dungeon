@@ -81,3 +81,20 @@ Dark fantasy undead skeleton warrior, rusty ancient armor and tattered cloth, ho
 - `shadow-blob.png`：径向黑色阴影；
 - `blood.png`：随机椭圆 + 模糊血迹；
 - `tox-blob.png`：径向绿色毒雾。
+
+## M6-1 v2 · 攻击姿态帧（纯绿幕 + 抠像）
+
+### 玩家 · 重甲骑士（攻击）
+```text
+Dark fantasy armored knight in a dynamic mid-attack pose, swinging a longsword overhead, dark steel plate armor with aged gold trim and dark blue tattered tabard, round shield raised, seen from a high three-quarter top-down angle like an isometric RPG, dramatic warm torch rim light from the upper left, deep shadows, painterly detailed game character art, strong dark atmosphere, crisp silhouette, isolated on a pure solid chroma green background (#00FF00), full body visible, centered, no text, no watermark, no ground shadow.
+```
+
+### 怪物 · 炎魔（攻击）
+```text
+Dark fantasy horned demon monster in a dynamic mid-attack pose, lunging forward with claws raised, red-black scaly hide, glowing yellow eyes, seen from a high three-quarter top-down angle like an isometric RPG, painterly detailed game monster art, dramatic warm rim light, deep shadows, crisp silhouette, isolated on a pure solid chroma green background (#00FF00), full body visible, centered, no text, no watermark, no ground shadow.
+```
+
+### 怪物 · 骷髅战士（攻击）
+```text
+Dark fantasy undead skeleton warrior in a dynamic mid-attack pose, raising a chipped sword to strike, rusty ancient armor and tattered cloth, seen from a high three-quarter top-down angle like an isometric RPG, painterly detailed game monster art, cold blue rim light, deep shadows, crisp silhouette, isolated on a pure solid chroma green background (#00FF00), full body visible, centered, no text, no watermark, no ground shadow.
+```
