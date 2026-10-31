@@ -91,7 +91,7 @@ cd folded-dungeon
 export GODOT_BIN=/path/to/Godot_v4.7.2-stable
 
 game/tools/godot test    # 无头回归：31 cases / 86 tests / 1472 assertions
-game/tools/godot run     # 打开可玩 2.5D GUI 运行层
+game/tools/godot run     # 打开标题界面 → 可玩 2.5D 运行层
 ```
 
 <details>
@@ -158,7 +158,7 @@ game/
 - 投射物为房间级抽象（逐格弹道、风暴 / 重力偏转待后续）；
 - GUI 尚未人工试玩验收（手感 / 布局待记录）。
 
-**下一步：** M6-4 UI/HUD/标题/结算（皮革 UI 全套、蓝图卡/事件/商店、主视觉 D 标题界面）→ M6-5 音频 → M6-6 验收；方案 [`docs/09`](docs/09-视觉与手感升级方案（M6）.md)。详见 [`docs/08-发布检查清单`](docs/08-发布检查清单.md)。
+**下一步：** M6-5 音频（程序合成 SFX + 环境 loop + 音量设置）→ M6-6 验收与发布素材；方案 [`docs/09`](docs/09-视觉与手感升级方案（M6）.md)。详见 [`docs/08-发布检查清单`](docs/08-发布检查清单.md)。
 
 ## 文档
 
