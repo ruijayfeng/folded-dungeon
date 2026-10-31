@@ -2,9 +2,9 @@ extends TestCase
 ## M6-5: procedural SFX/ambient files, bus layout and audio manager script.
 
 const FILES: Array[String] = [
-	"footstep_1.wav", "footstep_2.wav", "footstep_3.wav", "slash.wav", "hit.wav",
-	"death.wav", "explosion.wav", "electric.wav", "steam.wav", "door_open.wav",
-	"build.wav", "coin.wav", "ui_click.wav", "ui_error.wav", "boss_roar.wav",
+	"footstep_1.ogg", "footstep_2.ogg", "footstep_3.ogg", "slash.ogg", "hit.ogg",
+	"death.wav", "explosion.wav", "electric.wav", "steam.wav", "door_open.ogg",
+	"build.ogg", "coin.ogg", "ui_click.wav", "ui_error.wav", "boss_roar.wav",
 	"victory.wav", "defeat.wav", "ambient_dungeon.wav",
 ]
 
@@ -12,6 +12,12 @@ const FILES: Array[String] = [
 func test_audio_files_exist() -> void:
 	for file in FILES:
 		assert_true(FileAccess.file_exists("res://assets/audio/" + file), "missing audio: " + file)
+
+
+func test_all_sfx_streams_load() -> void:
+	for file in FILES:
+		var stream := load("res://assets/audio/" + file) as AudioStream
+		assert_true(stream != null, "sfx loads: " + file)
 
 
 func test_ambient_stream_loads_and_loops() -> void:

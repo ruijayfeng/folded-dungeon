@@ -26,7 +26,10 @@
 
 - 本仓库**不包含** Godot 引擎二进制；运行需自行安装 [Godot Engine 4.7.2](https://godotengine.org/)（MIT 许可）。
 - `game/icon.svg` 为本项目自制的占位图标，随本仓库 Apache-2.0 发布。
-- 当前无第三方音频、字体或美术素材（占位渲染由代码绘制）。
+- **字体**：[Noto Serif SC](https://fonts.google.com/noto/specimen/Noto+Serif+SC)（SIL Open Font License 1.1），子集化后位于 `game/assets/art3d/fonts/`，许可全文同目录 `OFL.txt`。
+- **音频**：部分 SFX 来自 [Kenney RPG Audio](https://kenney.nl/assets/rpg-audio)（CC0）、[Kenney UI Audio](https://kenney.nl/assets/ui-audio)（CC0）与 [RPG Sound Pack](https://opengameart.org/content/rpg-sound-pack)（author: artisticdude，CC0）；其余音效与环境 loop 由本项目程序合成（Apache-2.0）。详见 `game/assets/audio/LICENSES.md`，CC0 法律文本见 `game/assets/audio/CC0-1.0.txt`。
+- **美术**：2.5D 材质、单位立绘、标题主视觉与 UI 参考由用户配置的 Azure OpenAI 图像模型（`gpt-image-2.5-sunburst`）生成，生成 prompt 存档在 `docs/art-concepts/targets/prompts.md`；使用/发行前需复核对应模型服务条款。
+- 早期调试用的 KayKit CC0 模型仅作路线对照，**未进入仓库/最终资产**。
 
 ## 4. 参考与借鉴
 
