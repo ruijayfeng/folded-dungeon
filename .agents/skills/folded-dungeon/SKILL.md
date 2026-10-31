@@ -47,6 +47,7 @@ description: 《折叠地牢》项目上下文与工作约定 — Godot 4.7.2 �
 | `docs/02-补全设计与待确认清单.md` | D1–D15 决策 + AI 补全（折叠/12 房间/战斗/经济/术语） |
 | `docs/03-技术方案与里程碑.md` | 架构（sim/view 分离）、数据模型、算法、测试、M0–M5 |
 | `docs/04`–`docs/08` | 垂直切片验收、GUI 运行层、平衡报告、美术方向、发布检查清单 |
+| `docs/art-concepts/` · `research/03` | D11 三套风格概念图 + 美术资产/许可调研（待选型） |
 | `research/01-Godot开源项目调研.md` | 开源项目评估与整合建议 |
 | `.agents/skills/` | 本项目已安装的 Godot/AI 开发技能（见其 README） |
 | `game/` | Godot 4.7 工程（主场景 `presentation/run_mode/run_mode.tscn`；`tools/godot` 包装脚本） |
