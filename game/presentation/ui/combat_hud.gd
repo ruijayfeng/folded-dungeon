@@ -21,7 +21,7 @@ func refresh() -> void:
 	var state := controller.state
 	var player := state.player_unit()
 	var enemy_count := state.living_enemies().size()
-	text = "战斗 round=%d  HP=%d/%d  敌人=%d\nWASD 移动 / SPACE 攻击 / ENTER 结束回合" % [
+	text = "战斗 round=%d  HP=%d/%d  怪物=%d\nWASD 移动 / SPACE 攻击 / ENTER 结束回合" % [
 		state.round,
 		player.hp if player != null else 0,
 		player.max_hp if player != null else 0,

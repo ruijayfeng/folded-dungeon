@@ -100,7 +100,7 @@ func _update_hud() -> void:
 		lines.append("蓝图：" + "  ".join(offer_parts) + "   | 预览：%s" % str(preview_cell))
 	elif run.phase == RunController.Phase.ENCOUNTER and run.combat != null and run.combat.state != null:
 		var player := run.combat.state.player_unit()
-		lines.append("战斗 round=%d  HP=%d/%d  敌人=%d" % [
+		lines.append("战斗 round=%d  HP=%d/%d  怪物=%d" % [
 			run.combat.state.round, player.hp if player != null else 0,
 			player.max_hp if player != null else 0, run.combat.state.living_enemies().size(),
 		])
@@ -318,4 +318,4 @@ func _combat_attack_nearest() -> void:
 			run.sync_combat_result()
 			_refresh()
 			return
-	status_label.text = "没有相邻敌人可攻击"
+	status_label.text = "没有相邻怪物可攻击"

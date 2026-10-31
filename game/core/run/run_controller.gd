@@ -476,7 +476,7 @@ func _create_enemies(room: RoomInstance, slot_type: int) -> Array[Unit]:
 					enemy.display_name = "守卫随从"
 			_:
 				enemy.max_hp = 2 + floor_bonus
-				enemy.display_name = "敌人 %d" % (index + 1)
+				enemy.display_name = "怪物 %d" % (index + 1)
 		enemy.hp = enemy.max_hp
 		enemies.append(enemy)
 	return enemies

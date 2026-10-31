@@ -96,7 +96,7 @@ func _refresh_views() -> void:
 	if session.phase == DungeonSession.Phase.COMBAT and combat_controller.state != null:
 		var combat_state := combat_controller.state
 		var player := combat_state.player_unit()
-		status_label.text = "战斗  round=%d  HP=%d/%d  敌人=%d\n移动 WASD / 攻击 SPACE / 结束回合 ENTER" % [
+		status_label.text = "战斗  round=%d  HP=%d/%d  怪物=%d\n移动 WASD / 攻击 SPACE / 结束回合 ENTER" % [
 			combat_state.round,
 			player.hp if player != null else 0,
 			player.max_hp if player != null else 0,
@@ -192,7 +192,7 @@ func _combat_attack_nearest() -> void:
 		if combat_controller.state.distance(player, enemy) <= player.attack_range:
 			combat_controller.player_attack(enemy.unit_id)
 			return
-	status_label.text = "没有相邻敌人可攻击"
+	status_label.text = "没有相邻怪物可攻击"
 
 
 func _start_demo_combat() -> void:
@@ -210,7 +210,7 @@ func _start_demo_combat() -> void:
 		if not room.layout().is_walkable(cell) or cell == session.player.local_cell:
 			continue
 		var enemy := Unit.new(StringName("enemy_%d" % serial), Unit.TEAM_ENEMY)
-		enemy.display_name = "敌人 %d" % serial
+		enemy.display_name = "怪物 %d" % serial
 		enemy.max_hp = 4
 		enemy.hp = 4
 		enemy.attack_damage = 1
