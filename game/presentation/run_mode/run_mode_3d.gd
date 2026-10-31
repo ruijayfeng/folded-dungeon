@@ -34,6 +34,9 @@ var _cam_size_target := 10.2
 var _shake := 0.0
 var _time := 0.0
 var _hp_snapshot: Dictionary = {}
+var _engine_seen := 0
+var _combat_seen := 0
+var _combat_ref: CombatController = null
 
 var _font_title: SystemFont
 var _font_body: SystemFont
@@ -177,6 +180,9 @@ func _start_run(seed_value: int) -> void:
 	preview_cell = Vector2i(-1, -1)
 	_room_key = ""
 	_hp_snapshot.clear()
+	_engine_seen = 0
+	_combat_seen = 0
+	_combat_ref = null
 	_clear_unit_views()
 	_default_preview()
 	_sync()
@@ -248,6 +254,7 @@ func _sync() -> void:
 			room_3d.update_channels(state)
 	_sync_units(previous_hp)
 	_sync_hud()
+	_drain_events()
 
 
 func _sync_units(previous_hp: Dictionary) -> void:
@@ -298,7 +305,6 @@ func _sync_units(previous_hp: Dictionary) -> void:
 func _attack_feedback(unit_id: StringName, is_player: bool) -> void:
 	if is_player:
 		return
-	var t := create_tween()
 	_shake = maxf(_shake, 1.2)
 	var view: Unit3D = _unit_views.get(unit_id)
 	if view != null:
@@ -833,6 +839,228 @@ func _on_map_cell_pressed(cell: Vector2i) -> void:
 		return
 	preview_cell = cell
 	_sync()
+
+
+# ---------------------------------------------------------------- combat FX (M6-3)
+
+func _drain_events() -> void:
+	if run == null:
+		return
+	var eng_events: Array = run.engine.events if run.engine != null else []
+	if _engine_seen > eng_events.size():
+		_engine_seen = 0
+	for i in range(_engine_seen, eng_events.size()):
+		var desc := CombatFx.map_engine_event(eng_events[i])
+		if not desc.is_empty():
+			_apply_fx(desc)
+	_engine_seen = eng_events.size()
+	if run.combat == null or run.combat.state == null:
+		_combat_ref = null
+		return
+	if run.combat != _combat_ref:
+		_combat_ref = run.combat
+		_combat_seen = 0
+	var evs: Array = run.combat.state.events
+	if _combat_seen > evs.size():
+		_combat_seen = 0
+	for i in range(_combat_seen, evs.size()):
+		var desc := CombatFx.map_combat_event(evs[i])
+		if not desc.is_empty():
+			_apply_fx(desc)
+	_combat_seen = evs.size()
+
+
+func _apply_fx(desc: Dictionary) -> void:
+	match String(desc.get("kind", "")):
+		"wave":
+			var col := CombatFx.wave_color(desc.get("wave", &""))
+			var dir := int(desc.get("dir", 0))
+			var from := Vector3(ROOM_UNITS * 0.5, 0.7, ROOM_UNITS * 0.5)
+			var to := from + Vector3(DoorSpec.delta(dir).x, 0.0, DoorSpec.delta(dir).y) * 4.2
+			_spawn_projectile(from, to, col, 0.7, 0.42)
+			_burst_pos(from, col, 10, 0.4)
+		"wave_enter":
+			_burst_pos(Vector3(ROOM_UNITS * 0.5, 0.5, ROOM_UNITS * 0.5), Color(1.0, 0.6, 0.2), 10, 0.5)
+		"wave_hit":
+			_burst_cell(Vector2i(4, 4), CombatFx.wave_color(desc.get("wave", &"")), 18, 0.7)
+			_shake_camera(1.2)
+		"wave_redirect":
+			_burst_pos(Vector3(ROOM_UNITS * 0.5, 0.6, ROOM_UNITS * 0.5), Color(0.80, 0.92, 1.0), 16, 0.6)
+			_shake_camera(1.0)
+		"reaction":
+			var col: Color = desc.get("color", Color(1, 0.6, 0.3))
+			var cell: Vector2i = desc.get("cell", Vector2i(4, 4))
+			_burst_cell(cell, col, 30, 0.9)
+			_ring_cell(cell, col, 0.9)
+			_shake_camera(2.2)
+			_lbl_status.text = "反应：%s" % String(desc.get("recipe", &""))
+		"turret":
+			var target := _player_cell()
+			_spawn_projectile(Vector3(7.6, 1.4, 1.2), _world_pos(target, 0.9), Color(1.0, 0.78, 0.35), 0.2, 0.28)
+			_shake_camera(0.8)
+		"boss":
+			_burst_cell(Vector2i(4, 2), Color(1.0, 0.25, 0.15), 26, 1.2)
+			_ring_cell(Vector2i(4, 2), Color(1.0, 0.30, 0.18), 1.4)
+		"hit":
+			var defender := StringName(desc.get("defender", &""))
+			var attacker := StringName(desc.get("attacker", &""))
+			var cell := _unit_cell(defender)
+			if cell.x >= 0:
+				_burst_cell(cell, Color(1.0, 0.55, 0.28), 18, 0.45)
+				_slash_cell(cell, Color(1.0, 0.82, 0.55))
+				var view := _unit_views.get(defender) as Unit3D
+				if view != null:
+					view.flash_hit()
+			var aview := _unit_views.get(attacker) as Unit3D
+			if aview != null:
+				aview.play_attack()
+			_shake_camera(0.9)
+		"death":
+			var unit_id := StringName(desc.get("unit", &""))
+			var cell := _unit_cell(unit_id)
+			if cell.x >= 0:
+				_burst_cell(cell, Color(0.65, 0.60, 0.50), 22, 0.6)
+			_shake_camera(1.0)
+		"knockback":
+			var unit_id := StringName(desc.get("unit", &""))
+			var cell := _unit_cell(unit_id)
+			if cell.x >= 0:
+				_burst_cell(cell, Color(0.55, 0.50, 0.42), 10, 0.4)
+		"hazard":
+			var unit_id := StringName(desc.get("unit", &""))
+			var cell := _unit_cell(unit_id)
+			if cell.x >= 0:
+				_burst_cell(cell, Color(0.45, 0.92, 0.35), 14, 0.5)
+		"boss_ability":
+			_burst_cell(Vector2i(4, 3), Color(1.0, 0.28, 0.15), 24, 1.0)
+			_ring_cell(Vector2i(4, 3), Color(1.0, 0.30, 0.18), 1.2)
+			_shake_camera(1.8)
+		"stun":
+			var unit_id := StringName(desc.get("unit", &""))
+			var cell := _unit_cell(unit_id)
+			if cell.x >= 0:
+				_burst_cell(cell, Color(1.0, 0.86, 0.35), 10, 0.4)
+
+
+func _unit_cell(unit_id: StringName) -> Vector2i:
+	if run == null or run.combat == null or run.combat.state == null:
+		return Vector2i(-1, -1)
+	for unit in run.combat.state.units:
+		if unit.unit_id == unit_id:
+			return unit.local_cell
+	return Vector2i(-1, -1)
+
+
+func _player_cell() -> Vector2i:
+	if run != null and run.session != null and run.session.player != null:
+		return run.session.player.local_cell
+	return Vector2i(4, 4)
+
+
+func _world_pos(cell: Vector2i, y: float = 0.0) -> Vector3:
+	return Vector3(cell.x + 0.5, y, cell.y + 0.5)
+
+
+func _burst_cell(cell: Vector2i, color: Color, amount: int = 18, size: float = 0.6) -> void:
+	_burst_pos(_world_pos(cell, 0.5), color, amount, size)
+
+
+func _burst_pos(pos: Vector3, color: Color, amount: int = 18, size: float = 0.6) -> void:
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.amount = maxi(4, amount)
+	p.lifetime = 0.7
+	p.explosiveness = 0.95
+	p.gravity = Vector3(0, -1.6, 0)
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = size
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 180.0
+	p.initial_velocity_min = 0.4
+	p.initial_velocity_max = 1.8
+	p.scale_amount_min = 0.05
+	p.scale_amount_max = 0.16
+	p.color = color
+	p.position = pos
+	fx_root.add_child(p)
+	p.emitting = true
+	get_tree().create_timer(1.0).timeout.connect(func() -> void:
+		if is_instance_valid(p):
+			p.queue_free())
+
+
+func _slash_cell(cell: Vector2i, color: Color) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(1.15, 0.07, 0.06)
+	mi.mesh = bm
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = color
+	mi.material_override = mat
+	mi.position = _world_pos(cell, 1.05)
+	mi.rotation_degrees = Vector3(0, -40, 22)
+	mi.scale = Vector3(0.3, 1.0, 1.0)
+	fx_root.add_child(mi)
+	var t := create_tween()
+	t.tween_property(mi, "scale", Vector3(1.4, 1.0, 1.0), 0.12)
+	t.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.18)
+	t.tween_callback(func() -> void:
+		if is_instance_valid(mi):
+			mi.queue_free())
+
+
+func _ring_cell(cell: Vector2i, color: Color, radius: float = 1.0) -> void:
+	var mi := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.5
+	torus.outer_radius = 0.58
+	mi.mesh = torus
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = color
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 2.0
+	mi.material_override = mat
+	mi.position = _world_pos(cell, 0.06)
+	mi.scale = Vector3(0.3, 1.0, 0.3)
+	fx_root.add_child(mi)
+	var t := create_tween()
+	t.tween_property(mi, "scale", Vector3(radius, 1.0, radius), 0.35)
+	t.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.35)
+	t.tween_callback(func() -> void:
+		if is_instance_valid(mi):
+			mi.queue_free())
+
+
+func _spawn_projectile(from: Vector3, to: Vector3, color: Color, height: float = 0.5, duration: float = 0.35) -> void:
+	var mi := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.13
+	sphere.height = 0.26
+	mi.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = color
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 3.0
+	mi.material_override = mat
+	mi.position = from + Vector3(0, height, 0)
+	fx_root.add_child(mi)
+	var t := create_tween()
+	t.tween_property(mi, "position", to + Vector3(0, height, 0), duration).set_trans(Tween.TRANS_SINE)
+	t.parallel().tween_property(mi, "scale", Vector3(1.6, 1.6, 1.6), duration)
+	t.tween_callback(func() -> void:
+		if is_instance_valid(mi):
+			mi.queue_free())
 
 
 func _flash_transition() -> void:

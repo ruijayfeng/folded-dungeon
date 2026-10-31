@@ -17,6 +17,7 @@ var _shadow: MeshInstance3D = null
 var _hp_bg: MeshInstance3D = null
 var _hp_fill: MeshInstance3D = null
 var _rune: MeshInstance3D = null
+var _aura: Node3D = null
 var _hit_tween: Tween = null
 var _move_tween: Tween = null
 var _last_hp := -1
@@ -42,7 +43,7 @@ func setup(unit_ref: Unit, player_unit: bool) -> void:
 	_sprite.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
 	_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	_sprite.pixel_size = body_height / float(tex.get_height())
-	_sprite.modulate = Color(0.97, 0.92, 0.85, 1.0)
+	_sprite.modulate = Color(0.92, 0.82, 1.0, 1.0) if (unit != null and unit.display_name.contains("精英")) else Color(0.97, 0.92, 0.85, 1.0)
 	_sprite.position = Vector3(0, body_height * 0.5, 0)
 	_sprite.render_priority = 2
 	add_child(_sprite)
@@ -57,14 +58,20 @@ func setup(unit_ref: Unit, player_unit: bool) -> void:
 		_rune = _rune_ring()
 		_rune.position = Vector3(0, 0.03, 0)
 		add_child(_rune)
+	if _is_boss():
+		_build_boss_aura()
 	_update_hp()
+
+
+func _is_boss() -> bool:
+	return unit != null and (unit.unit_id == &"boss" or unit.display_name.contains("守卫"))
 
 
 func _pick_texture() -> String:
 	if is_player:
 		return UNIT_DIR + "player-knight.png"
 	var label := unit.display_name if unit != null else ""
-	if label.contains("Boss"):
+	if _is_boss():
 		return UNIT_DIR + "monster-demon.png"
 	var n := 0
 	for ch in label:
@@ -79,8 +86,10 @@ func _pick_height() -> float:
 	if is_player:
 		return 1.9
 	var label := unit.display_name if unit != null else ""
-	if label.contains("Boss"):
+	if _is_boss():
 		return 2.5
+	if label.contains("精英"):
+		return 1.75
 	return 1.55 if label.contains("1") or label.contains("3") else 1.45
 
 
@@ -124,6 +133,30 @@ func _flat_quad(texture_path: String, size: Vector2, color: Color) -> MeshInstan
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mi.material_override = mat
 	return mi
+
+
+func _build_boss_aura() -> void:
+	_aura = Node3D.new()
+	add_child(_aura)
+	var mi := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.5
+	torus.outer_radius = 0.6
+	mi.mesh = torus
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = Color(1.0, 0.22, 0.12, 0.55)
+	mi.material_override = mat
+	mi.position = Vector3(0, 0.04, 0)
+	_aura.add_child(mi)
+	var l := OmniLight3D.new()
+	l.position = Vector3(0, 1.2, 0)
+	l.light_color = Color(1.0, 0.28, 0.15)
+	l.light_energy = 1.4
+	l.omni_range = 2.6
+	_aura.add_child(l)
 
 
 func _rune_ring() -> MeshInstance3D:
@@ -215,10 +248,13 @@ func play_attack() -> void:
 
 
 func _die_visual() -> void:
+	if _sprite == null:
+		return
+	if _hp_bg != null:
+		_hp_bg.visible = false
+	if _hp_fill != null:
+		_hp_fill.visible = false
 	var t := create_tween()
 	t.tween_property(_sprite, "modulate:a", 0.0, 0.35)
-	if _hp_bg != null:
-		t.parallel().tween_property(_hp_bg, "modulate:a", 0.0, 0.25)
-	if _hp_fill != null:
-		t.parallel().tween_property(_hp_fill, "modulate:a", 0.0, 0.25)
+	t.parallel().tween_property(self, "scale", Vector3(0.92, 0.82, 0.92), 0.35)
 	t.tween_callback(func() -> void: visible = false)
