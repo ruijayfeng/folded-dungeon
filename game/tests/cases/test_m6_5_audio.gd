@@ -6,6 +6,7 @@ const FILES: Array[String] = [
 	"death.wav", "explosion.wav", "electric.wav", "steam.wav", "door_open.ogg",
 	"build.ogg", "coin.ogg", "ui_click.wav", "ui_error.wav", "boss_roar.wav",
 	"victory.wav", "defeat.wav", "ambient_dungeon.wav",
+	"music_title.wav", "music_combat.wav",
 ]
 
 

@@ -378,9 +378,6 @@ func _build_props() -> void:
 		_sphere(_props_root, Vector3(1.4 + (ri % 4) * 0.24, 0.06, 3.1 + (ri / 4) * 0.3), 0.08, _mat_stone_dark)
 	# small crate / barrel
 	_box(_props_root, Vector3(2.55, 0.26, 6.85), Vector3(0.6, 0.52, 0.5), _mat_wood, Vector3(0, 24, 0))
-	# banner on back wall
-	_box(_props_root, Vector3(6.2, 1.45, 1.12), Vector3(0.7, 1.0, 0.04), _mat_cloth)
-	_box(_props_root, Vector3(6.2, 1.99, 1.12), Vector3(0.8, 0.06, 0.06), _mat_gold)
 
 
 func _build_brazier(pos: Vector3) -> void:
@@ -516,6 +513,9 @@ func _build_theme_decor() -> void:
 			for i in 7:
 				_sphere(_props_root, Vector3(5.9 + (i % 3) * 0.22, 0.08, 2.1 + (i / 3) * 0.2), 0.10, _emissive(Color(1.0, 0.35, 0.10), 2.2))
 			_sphere(_props_root, Vector3(2.4, 0.7, 2.5), 0.06, _emissive(Color(1.0, 0.55, 0.2), 3.0))
+			_cyl(_props_root, Vector3(3.4, 0.28, 2.35), 0.22, 0.26, 0.55, _mat_wood)
+			for i in 4:
+				_box(_props_root, Vector3(6.7, 0.35, 2.2 + i * 0.22), Vector3(0.08, 0.7, 0.05), _mat_iron, Vector3(0, 0, 8))
 		&"frost":
 			var ice_mat := StandardMaterial3D.new()
 			ice_mat.albedo_color = Color(0.62, 0.82, 0.98, 0.85)
@@ -528,15 +528,24 @@ func _build_theme_decor() -> void:
 				var h := 0.35 + (i % 3) * 0.14
 				var c := _cyl(_props_root, Vector3(2.15 + (i % 3) * 0.32, h * 0.5, 2.3 + (i / 3) * 0.4), 0.0, 0.075 + (i % 2) * 0.03, h, ice_mat)
 				c.rotation_degrees = Vector3(0, i * 41, (i % 2) * 6)
+			for i in 5:
+				_sphere(_props_root, Vector3(2.0 + (i % 3) * 0.35, 0.06, 6.3 + (i / 3) * 0.3), 0.12, _mat_bone)
+			_box(_props_root, Vector3(6.7, 0.35, 6.3), Vector3(0.5, 0.6, 0.4), _mat_wood, Vector3(0, 12, 0))
 			var frost_pool := _plane(_props_root, Vector3(6.55, 0.02, 2.05), Vector2(1.7, 1.3), _emissive(Color(0.30, 0.52, 0.80), 0.35))
 			var pool_mat := frost_pool.material_override as StandardMaterial3D
 			if pool_mat != null:
 				pool_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 				pool_mat.albedo_color.a = 0.35
 		&"toxin":
+			_cyl(_props_root, Vector3(6.4, 0.3, 2.3), 0.24, 0.30, 0.6, _mat_wood).rotation_degrees = Vector3(0, 0, 90)
+			for i in 3:
+				_sphere(_props_root, Vector3(2.1 + i * 0.35, 0.06, 6.2), 0.12, _emissive(Color(0.35, 0.85, 0.25), 0.5))
 			for i in 6:
 				_cyl(_props_root, Vector3(2.0 + (i % 3) * 0.4, 0.10, 4.9 + (i / 3) * 0.4), 0.03, 0.08, 0.2, _emissive(Color(0.5, 0.9, 0.3), 1.0))
 		&"storm":
+			for i in 4:
+				_box(_props_root, Vector3(2.1 + i * 0.18, 0.55 + (i % 2) * 0.15, 6.2), Vector3(0.05, 1.0, 0.05), _mat_iron, Vector3(0, i * 15, 0))
+			_cyl(_props_root, Vector3(6.9, 0.35, 2.4), 0.20, 0.26, 0.7, _mat_iron)
 			_cyl(_props_root, Vector3(2.3, 0.6, 2.3), 0.10, 0.16, 1.2, _mat_iron)
 			for i in 3:
 				_sphere(_props_root, Vector3(2.3, 1.25 + i * 0.18, 2.3), 0.10 - i * 0.02, _emissive(Color(1.0, 0.86, 0.35), 3.0))
@@ -546,19 +555,34 @@ func _build_theme_decor() -> void:
 			for i in 2:
 				_cyl(_props_root, Vector3(2.3 + i * 0.8, 0.55, 2.4), 0.22, 0.28, 1.1, _mat_stone_dark)
 				_cyl(_props_root, Vector3(2.3 + i * 0.8, 0.9, 2.4), 0.24, 0.24, 0.16, _emissive(Color(1.0, 0.74, 0.28), 2.0))
+			_box(_props_root, Vector3(6.7, 0.2, 2.3), Vector3(1.0, 0.08, 0.12), _mat_iron)
+			for i in 3:
+				_box(_props_root, Vector3(6.2 + i * 0.3, 0.35, 6.3), Vector3(0.16, 0.5, 0.16), _mat_stone_dark)
 		&"conduit":
 			_box(_props_root, Vector3(4.5, 0.22, 2.1), Vector3(4.4, 0.12, 0.12), _mat_iron)
 			_box(_props_root, Vector3(4.5, 0.22, 2.1), Vector3(4.2, 0.05, 0.06), _emissive(Color(0.4, 0.82, 1.0), 1.6))
+			for i in 3:
+				_cyl(_props_root, Vector3(2.2, 0.35, 3.0 + i * 1.2), 0.12, 0.12, 0.5, _mat_iron).rotation_degrees = Vector3(90, 0, 0)
+			_box(_props_root, Vector3(6.6, 0.4, 6.2), Vector3(0.3, 0.7, 0.3), _mat_stone_dark)
 		&"mirror":
 			_box(_props_root, Vector3(2.3, 0.9, 2.3), Vector3(0.1, 1.5, 0.8), _emissive(Color(0.72, 0.85, 0.95), 0.8))
 			_box(_props_root, Vector3(6.6, 0.9, 6.4), Vector3(0.8, 1.5, 0.1), _emissive(Color(0.72, 0.85, 0.95), 0.8))
+			for i in 3:
+				_box(_props_root, Vector3(2.2 + i * 0.22, 0.8, 6.4), Vector3(0.06, 1.1, 0.5), _emissive(Color(0.6, 0.78, 0.92), 0.6), Vector3(0, 20, 0))
+			_box(_props_root, Vector3(6.5, 0.25, 2.2), Vector3(0.7, 0.3, 0.5), _mat_stone_dark)
 		&"echo":
 			for i in 4:
 				_cyl(_props_root, Vector3(2.4 + i * 0.5, 0.5 + (i % 2) * 0.18, 6.4 - i * 0.3), 0.02, 0.14, 0.9 + (i % 2) * 0.3, _emissive(Color(0.72, 0.45, 1.0), 1.5)).rotation_degrees = Vector3(0, i * 31, 0)
+			for i in 3:
+				_cyl(_props_root, Vector3(6.4, 1.0, 2.0 + i * 0.45), 0.02, 0.02, 0.8, _emissive(Color(0.72, 0.45, 1.0), 0.9))
 		&"gravity":
 			for i in 4:
 				_sphere(_props_root, Vector3(2.3 + (i % 2) * 0.7, 0.7 + (i / 2) * 0.35, 2.3 + (i / 2) * 0.6), 0.16, _mat_stone_dark)
+			for i in 3:
+				_sphere(_props_root, Vector3(6.3, 1.0 + i * 0.35, 6.2 - i * 0.3), 0.1, _emissive(Color(0.6, 0.52, 1.0), 0.8))
 		&"fold":
+			for i in 3:
+				_box(_props_root, Vector3(2.2 + i * 0.35, 0.7 + (i % 2) * 0.3, 6.2), Vector3(0.7, 0.06, 0.7), _mat_stone_dark, Vector3(20, i * 25, 8))
 			var torus := TorusMesh.new()
 			torus.inner_radius = 0.8
 			torus.outer_radius = 0.9
@@ -570,9 +594,13 @@ func _build_theme_decor() -> void:
 		&"vault":
 			for i in 5:
 				_sphere(_props_root, Vector3(2.2 + (i % 3) * 0.3, 0.10, 6.3 + (i / 3) * 0.3), 0.13, _emissive(Color(1.0, 0.78, 0.30), 0.9))
+			_cyl(_props_root, Vector3(2.3, 0.35, 2.3), 0.2, 0.3, 0.7, _mat_stone_dark)
+			_sphere(_props_root, Vector3(2.3, 0.78, 2.3), 0.18, _emissive(Color(1.0, 0.82, 0.35), 1.4))
 			_box(_props_root, Vector3(6.4, 0.25, 2.2), Vector3(0.8, 0.5, 0.55), _mat_wood)
 			_box(_props_root, Vector3(6.4, 0.55, 2.2), Vector3(0.84, 0.06, 0.58), _mat_gold)
 		&"ballista":
+			_box(_props_root, Vector3(6.6, 0.55, 6.2), Vector3(0.6, 1.0, 0.2), _mat_wood)
+			_sphere(_props_root, Vector3(6.6, 0.95, 6.2), 0.12, _mat_bone)
 			_box(_props_root, Vector3(4.5, 0.3, 2.1), Vector3(1.4, 0.35, 0.7), _mat_wood)
 			_cyl(_props_root, Vector3(4.5, 0.55, 2.1), 0.06, 0.06, 1.2, _mat_iron).rotation_degrees = Vector3(0, 0, 90)
 			for i in 5:
@@ -581,6 +609,9 @@ func _build_theme_decor() -> void:
 			_box(_props_root, Vector3(4.5, 0.25, 2.2), Vector3(1.2, 0.5, 0.9), _mat_stone_dark)
 			_sphere(_props_root, Vector3(4.5, 0.62, 2.2), 0.24, _mat_bone)
 			_box(_props_root, Vector3(4.5, 0.42, 2.2), Vector3(0.5, 0.1, 0.1), _mat_cloth)
+			for i in 2:
+				_cyl(_props_root, Vector3(2.2 + i * 4.6, 0.35, 6.3), 0.16, 0.22, 0.7, _mat_stone_dark)
+				_sphere(_props_root, Vector3(2.2 + i * 4.6, 0.85, 6.3), 0.12, _emissive(Color(1.0, 0.28, 0.15), 1.8))
 		&"camp":
 			_box(_props_root, Vector3(2.4, 0.22, 6.9), Vector3(0.9, 0.4, 0.6), _mat_wood)
 			_sphere(_props_root, Vector3(2.6, 0.5, 6.9), 0.10, _emissive(Color(1.0, 0.6, 0.25), 2.0))
@@ -589,9 +620,10 @@ func _build_theme_decor() -> void:
 				_box(_props_root, Vector3(6.3 + (i % 2) * 0.25, 0.22, 2.1 + (i / 2) * 0.25), Vector3(0.12, 0.4, 0.12), _mat_iron)
 		&"corridor":
 			_cyl(_props_root, Vector3(2.2, 0.35, 6.8), 0.28, 0.24, 0.7, _mat_wood)
-	for light in _props_root.get_children():
-		if light is OmniLight3D:
-			continue
+	# themed banner on the back wall (accent-colored cloth)
+	var cloth := _mat_plain(Color(accent.r * 0.45, accent.g * 0.30, accent.b * 0.30), 0.95)
+	_box(_props_root, Vector3(6.2, 1.45, 1.12), Vector3(0.7, 1.0, 0.04), cloth)
+	_box(_props_root, Vector3(6.2, 1.99, 1.12), Vector3(0.8, 0.06, 0.06), _mat_gold)
 
 
 func _build_hazard_particles(layout: RoomLayout) -> void:

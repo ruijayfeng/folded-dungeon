@@ -12,6 +12,7 @@ var _font: Font
 
 func _ready() -> void:
 	AudioManager.stop_ambient()
+	AudioManager.play_music(&"music_title")
 	theme = DarkUI.theme()
 	_font = DarkUI.font()
 	_build()
@@ -231,6 +232,7 @@ func _on_mute_toggled(pressed: bool) -> void:
 
 
 func _on_start() -> void:
+	AudioManager.stop_music()
 	get_tree().change_scene_to_file(RUN_SCENE)
 
 

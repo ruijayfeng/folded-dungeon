@@ -159,6 +159,56 @@ def arpeggio(up: bool) -> np.ndarray:
     return x
 
 
+def music_title(seconds: int = 15) -> np.ndarray:
+    n = int(SR * seconds)
+    t = np.arange(n) / SR
+    chord = (0.30 * np.sin(2 * math.pi * 110.0 * t)
+             + 0.22 * np.sin(2 * math.pi * 164.81 * t + 0.4)
+             + 0.18 * np.sin(2 * math.pi * 220.0 * t + 1.1))
+    chord *= 0.55 + 0.45 * np.sin(2 * math.pi * 0.06 * t - math.pi / 2) ** 2
+    bells = np.zeros(n)
+    for pos_s in (2.5, 6.5, 10.5):
+        pos = int(SR * pos_s)
+        length = int(SR * 2.0)
+        tt = np.arange(length) / SR
+        bells[pos:pos + length] += (np.sin(2 * math.pi * 880 * tt) * 0.18
+                                     + np.sin(2 * math.pi * 1318.5 * tt) * 0.10) * env(length, 0.01, 1.8, 2)
+    xf = int(SR * 0.8)
+    mix = np.linspace(0, 1, xf)
+    head = chord[:xf].copy()
+    chord[:xf] = chord[:xf] * mix + chord[-xf:] * (1 - mix)
+    chord[-xf:] = chord[-xf:] * (1 - mix) + head * mix
+    return np.tanh((chord + bells) * 1.2) * 0.5
+
+
+def music_combat(seconds: int = 20) -> np.ndarray:
+    n = int(SR * seconds)
+    t = np.arange(n) / SR
+    drone = (0.22 * np.sin(2 * math.pi * 55 * t)
+             + 0.14 * np.sin(2 * math.pi * 82.5 * t + 0.7))
+    pulse = np.zeros(n)
+    beat = 0.62
+    pos = 0
+    while pos < n:
+        length = int(SR * 0.28)
+        tt = np.arange(length) / SR
+        hit = np.sin(2 * math.pi * (58 - 18 * tt) * tt) * env(length, 0.002, 0.26, 3)
+        avail = min(length, n - pos)
+        pulse[pos:pos + avail] += hit[:avail] * 0.6
+        tick_pos = pos + int(SR * beat * 0.5)
+        tick_len = int(SR * 0.05)
+        if tick_pos + tick_len < n:
+            pulse[tick_pos:tick_pos + tick_len] += noise(tick_len) * env(tick_len, 0.001, 0.04, 4) * 0.15
+        pos += int(SR * beat)
+    tension = np.sin(2 * math.pi * 0.1 * t) ** 2
+    xf = int(SR * 0.5)
+    mix = np.linspace(0, 1, xf)
+    head = drone[:xf].copy()
+    drone[:xf] = drone[:xf] * mix + drone[-xf:] * (1 - mix)
+    drone[-xf:] = drone[-xf:] * (1 - mix) + head * mix
+    return np.tanh((drone * (0.7 + 0.3 * tension) + pulse) * 1.1) * 0.6
+
+
 def ambient_loop(seconds: int = 30) -> np.ndarray:
     n = int(SR * seconds)
     t = np.arange(n) / SR
@@ -209,6 +259,8 @@ def main() -> None:
     write_wav("victory.wav", arpeggio(True))
     write_wav("defeat.wav", arpeggio(False))
     write_wav("ambient_dungeon.wav", ambient_loop(30))
+    write_wav("music_title.wav", music_title(15))
+    write_wav("music_combat.wav", music_combat(20))
 
 
 if __name__ == "__main__":

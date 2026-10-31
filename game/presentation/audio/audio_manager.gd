@@ -22,6 +22,8 @@ const SFX_FILES := {
 	&"victory": "victory.wav",
 	&"defeat": "defeat.wav",
 	&"ambient_dungeon": "ambient_dungeon.wav",
+	&"music_title": "music_title.wav",
+	&"music_combat": "music_combat.wav",
 }
 const SFX_ALIASES := {
 	&"footstep": &"footstep_1",
@@ -34,6 +36,7 @@ const SFX_ALIASES := {
 var _streams: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 var _ambient: AudioStreamPlayer = null
+var _music: AudioStreamPlayer = null
 var _next_player := 0
 var _settings := {"master": 0.85, "music": 0.70, "sfx": 0.95, "muted": false}
 
@@ -48,6 +51,10 @@ func _ready() -> void:
 	_ambient = AudioStreamPlayer.new()
 	_ambient.bus = &"Music"
 	add_child(_ambient)
+	_music = AudioStreamPlayer.new()
+	_music.bus = &"Music"
+	_music.volume_db = -8.0
+	add_child(_music)
 	_load_settings()
 	_apply_settings()
 
@@ -86,6 +93,27 @@ func play_ambient(id: StringName = &"ambient_dungeon") -> void:
 func stop_ambient() -> void:
 	if _ambient != null:
 		_ambient.stop()
+
+
+func play_music(id: StringName) -> void:
+	var stream := _get_stream(id)
+	if stream == null or _music == null:
+		return
+	if stream is AudioStreamWAV:
+		var wav := (stream as AudioStreamWAV).duplicate() as AudioStreamWAV
+		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		wav.loop_begin = 0
+		wav.loop_end = int(wav.data.size() / 2)
+		_music.stream = wav
+	else:
+		_music.stream = stream
+	if not _music.playing:
+		_music.play()
+
+
+func stop_music() -> void:
+	if _music != null:
+		_music.stop()
 
 
 func set_bus_volume(bus_name: String, linear: float) -> void:

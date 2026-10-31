@@ -38,6 +38,7 @@ var _engine_seen := 0
 var _combat_seen := 0
 var _combat_ref: CombatController = null
 var _was_settled := false
+var _combat_music_on := false
 
 var _font_title: Font
 var _font_body: Font
@@ -97,6 +98,7 @@ func _ready() -> void:
 	add_child(fx_root)
 	_build_hud()
 	_start_run(RUN_SEED)
+	AudioManager.stop_music()
 	AudioManager.play_ambient(&"ambient_dungeon")
 
 
@@ -266,6 +268,7 @@ func _sync() -> void:
 	_sync_hud()
 	_drain_events()
 	_sync_settlement_audio()
+	_sync_combat_music()
 
 
 func _sync_units(previous_hp: Dictionary) -> void:
@@ -739,6 +742,7 @@ func _sync_debug_panel() -> void:
 func _go_title() -> void:
 	AudioManager.play_sfx(&"ui_click")
 	AudioManager.stop_ambient()
+	AudioManager.stop_music()
 	get_tree().change_scene_to_file("res://presentation/ui/title_screen.tscn")
 
 
@@ -982,6 +986,17 @@ func _on_map_cell_pressed(cell: Vector2i) -> void:
 
 
 # ---------------------------------------------------------------- combat FX (M6-3)
+
+func _sync_combat_music() -> void:
+	var want: bool = run.phase == RunController.Phase.ENCOUNTER
+	if want == _combat_music_on:
+		return
+	_combat_music_on = want
+	if want:
+		AudioManager.play_music(&"music_combat")
+	else:
+		AudioManager.stop_music()
+
 
 func _sync_settlement_audio() -> void:
 	var settled: bool = run.phase == RunController.Phase.SETTLED
