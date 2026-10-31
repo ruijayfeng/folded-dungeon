@@ -109,7 +109,7 @@ game/tools/godot test    # 无头回归：37 cases / 108 tests / 1707 assertions
 game/tools/godot run     # 打开标题界面 → 2.5D 单局
 ```
 
-**Windows 预览版：** 见 [Releases → m6-windows-preview](https://github.com/ruijayfeng/folded-dungeon/releases/tag/m6-windows-preview)（单个 exe，内嵌 pck；尚未在 Windows 真机冒烟，欢迎反馈）。
+**Windows 构建：** 本机可生成 `game/build/windows/FoldedDungeon.exe`（单文件内嵌 pck，123MB；`game/build/` 已 gitignore）。GitHub Release 大文件上传当前网络受限，暂未提供下载；需要时可本地导出或用 Releases 页面的方式手动上传。
 
 ```bash
 # 也可以自己运行编辑器/无头测试
@@ -177,7 +177,7 @@ game/
 **已知限制（原型阶段）：**
 
 - **美术/音频为第一版**：AI 材质与立绘、程序化装饰、CC0+合成音效已接入，但动作帧密度、主题道具与混音仍可继续打磨；
-- Windows 构建已实际导出（`game/build/windows/FoldedDungeon.exe`，121MB，内嵌 pck；模板已装，尚未在 Windows 真机运行）；
+- Windows 构建已实际导出（`game/build/windows/FoldedDungeon.exe`，123MB，内嵌 pck；模板已装，尚未在 Windows 真机运行；大文件上传 GitHub Release 受网络限制待补）；
 - 折叠仅实现虚拟传导边，折叠移动 / UI 待扩展；
 - 投射物为房间级抽象（逐格弹道、风暴 / 重力偏转待后续）；
 - GUI 尚未人工试玩验收（手感 / 布局待记录，M6-6 已录自动化通关 GIF 作为证据）。
