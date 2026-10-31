@@ -37,6 +37,7 @@ var _hp_snapshot: Dictionary = {}
 var _engine_seen := 0
 var _combat_seen := 0
 var _combat_ref: CombatController = null
+var _was_settled := false
 
 var _font_title: Font
 var _font_body: Font
@@ -96,6 +97,7 @@ func _ready() -> void:
 	add_child(fx_root)
 	_build_hud()
 	_start_run(RUN_SEED)
+	AudioManager.play_ambient(&"ambient_dungeon")
 
 
 func _process(delta: float) -> void:
@@ -263,6 +265,7 @@ func _sync() -> void:
 	_sync_units(previous_hp)
 	_sync_hud()
 	_drain_events()
+	_sync_settlement_audio()
 
 
 func _sync_units(previous_hp: Dictionary) -> void:
@@ -706,6 +709,8 @@ func _sync_debug_panel() -> void:
 
 
 func _go_title() -> void:
+	AudioManager.play_sfx(&"ui_click")
+	AudioManager.stop_ambient()
 	get_tree().change_scene_to_file("res://presentation/ui/title_screen.tscn")
 
 
@@ -824,6 +829,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_offer_pressed(keycode - KEY_1)
 			KEY_R:
 				preview_orientation = (preview_orientation + 1) % 4
+				AudioManager.play_sfx(&"ui_click")
 				_lbl_status.text = "旋转预览：%d°" % (preview_orientation * 90)
 				_sync()
 			KEY_ENTER, KEY_KP_ENTER:
@@ -920,6 +926,7 @@ func _key_dir(keycode: int) -> int:
 func _on_offer_pressed(index: int) -> void:
 	if run == null or run.phase != RunController.Phase.BUILD:
 		return
+	AudioManager.play_sfx(&"ui_click")
 	if index < 0 or index >= run.current_offer.size():
 		return
 	selected_offer = index
@@ -931,7 +938,11 @@ func _on_offer_pressed(index: int) -> void:
 func _on_choice_pressed(choice: int) -> void:
 	if run == null:
 		return
+	AudioManager.play_sfx(&"ui_click")
+	var gold_before: int = run.state.gold
 	if run.resolve_choice(choice):
+		if run.state.gold > gold_before:
+			AudioManager.play_sfx(&"coin")
 		_sync()
 
 
@@ -943,6 +954,14 @@ func _on_map_cell_pressed(cell: Vector2i) -> void:
 
 
 # ---------------------------------------------------------------- combat FX (M6-3)
+
+func _sync_settlement_audio() -> void:
+	var settled: bool = run.phase == RunController.Phase.SETTLED
+	if settled and not _was_settled:
+		var won: bool = run.combat != null and run.combat.result == &"victory"
+		AudioManager.play_sfx(&"victory" if won else &"defeat")
+	_was_settled = settled
+
 
 func _drain_events() -> void:
 	if run == null:
@@ -974,6 +993,7 @@ func _drain_events() -> void:
 func _apply_fx(desc: Dictionary) -> void:
 	match String(desc.get("kind", "")):
 		"wave":
+			AudioManager.play_sfx(&"wave", 0.05)
 			var col := CombatFx.wave_color(desc.get("wave", &""))
 			var dir := int(desc.get("dir", 0))
 			var from := Vector3(ROOM_UNITS * 0.5, 0.7, ROOM_UNITS * 0.5)
@@ -983,12 +1003,15 @@ func _apply_fx(desc: Dictionary) -> void:
 		"wave_enter":
 			_burst_pos(Vector3(ROOM_UNITS * 0.5, 0.5, ROOM_UNITS * 0.5), Color(1.0, 0.6, 0.2), 10, 0.5)
 		"wave_hit":
+			AudioManager.play_sfx(&"hit", 0.05)
 			_burst_cell(Vector2i(4, 4), CombatFx.wave_color(desc.get("wave", &"")), 18, 0.7)
 			_shake_camera(1.2)
 		"wave_redirect":
 			_burst_pos(Vector3(ROOM_UNITS * 0.5, 0.6, ROOM_UNITS * 0.5), Color(0.80, 0.92, 1.0), 16, 0.6)
 			_shake_camera(1.0)
 		"reaction":
+			var recipe_audio: StringName = StringName("reaction_" + String(desc.get("recipe", &"")))
+			AudioManager.play_sfx(recipe_audio, 0.03)
 			var col: Color = desc.get("color", Color(1, 0.6, 0.3))
 			var cell: Vector2i = desc.get("cell", Vector2i(4, 4))
 			_burst_cell(cell, col, 30, 0.9)
@@ -996,13 +1019,17 @@ func _apply_fx(desc: Dictionary) -> void:
 			_shake_camera(2.2)
 			_lbl_status.text = "反应：%s" % String(desc.get("recipe", &""))
 		"turret":
+			AudioManager.play_sfx(&"slash", 0.04)
 			var target := _player_cell()
 			_spawn_projectile(Vector3(7.6, 1.4, 1.2), _world_pos(target, 0.9), Color(1.0, 0.78, 0.35), 0.2, 0.28)
 			_shake_camera(0.8)
 		"boss":
+			AudioManager.play_sfx(&"boss_roar")
 			_burst_cell(Vector2i(4, 2), Color(1.0, 0.25, 0.15), 26, 1.2)
 			_ring_cell(Vector2i(4, 2), Color(1.0, 0.30, 0.18), 1.4)
 		"hit":
+			AudioManager.play_sfx(&"slash", 0.05)
+			AudioManager.play_sfx(&"hit", 0.05)
 			var defender := StringName(desc.get("defender", &""))
 			var attacker := StringName(desc.get("attacker", &""))
 			var cell := _unit_cell(defender)
@@ -1017,6 +1044,7 @@ func _apply_fx(desc: Dictionary) -> void:
 				aview.play_attack()
 			_shake_camera(0.9)
 		"death":
+			AudioManager.play_sfx(&"death")
 			var unit_id := StringName(desc.get("unit", &""))
 			var cell := _unit_cell(unit_id)
 			if cell.x >= 0:
@@ -1033,10 +1061,12 @@ func _apply_fx(desc: Dictionary) -> void:
 			if cell.x >= 0:
 				_burst_cell(cell, Color(0.45, 0.92, 0.35), 14, 0.5)
 		"boss_ability":
+			AudioManager.play_sfx(&"boss_roar")
 			_burst_cell(Vector2i(4, 3), Color(1.0, 0.28, 0.15), 24, 1.0)
 			_ring_cell(Vector2i(4, 3), Color(1.0, 0.30, 0.18), 1.2)
 			_shake_camera(1.8)
 		"stun":
+			AudioManager.play_sfx(&"electric", 0.04)
 			var unit_id := StringName(desc.get("unit", &""))
 			var cell := _unit_cell(unit_id)
 			if cell.x >= 0:
@@ -1186,6 +1216,7 @@ func _try_build() -> void:
 		return
 	var report := run.build_and_place(selected_offer, preview_cell, preview_orientation)
 	if report.is_valid():
+		AudioManager.play_sfx(&"build")
 		_flash_transition()
 		_lbl_status.text = "建造成功：穿过门进入新房间"
 		selected_offer = 0 if not run.current_offer.is_empty() else -1
@@ -1193,6 +1224,7 @@ func _try_build() -> void:
 		_default_preview()
 		_sync()
 	else:
+		AudioManager.play_sfx(&"ui_error")
 		_lbl_status.text = "建造失败：%s" % report.summary()
 		_sync()
 
@@ -1202,17 +1234,21 @@ func _explore_move(dir: int) -> void:
 	var result := run.session.try_move(dir)
 	if not result["ok"]:
 		_lbl_status.text = "移动失败：%s" % str(result["reason"])
+		AudioManager.play_sfx(&"ui_error")
 		return
+	AudioManager.play_footstep()
 	run.engine.tick()
 	if run.session.current_room_cell() != from_room:
 		run.on_room_entered(run.session.current_room_cell())
 		_room_key = ""
+		AudioManager.play_sfx(&"door_open")
 		_flash_transition()
 	_sync()
 
 
 func _combat_move(dir: int) -> void:
 	run.combat.player_move(dir)
+	AudioManager.play_footstep()
 	_sync()
 
 
@@ -1230,4 +1266,5 @@ func _combat_attack() -> void:
 
 
 func _restart() -> void:
+	AudioManager.play_sfx(&"ui_click")
 	_start_run(RUN_SEED)

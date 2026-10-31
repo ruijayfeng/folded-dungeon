@@ -5,10 +5,13 @@ const RUN_SCENE := "res://presentation/run_mode/run_mode_3d.tscn"
 
 var _menu: VBoxContainer
 var _help_panel: PanelContainer
+var _settings_panel: PanelContainer
+var _settings_sliders: Array[HSlider] = []
 var _font: Font
 
 
 func _ready() -> void:
+	AudioManager.stop_ambient()
 	theme = DarkUI.theme()
 	_font = DarkUI.font()
 	_build()
@@ -82,6 +85,7 @@ func _build() -> void:
 	for item in [
 		["开始新的一局", _on_start],
 		["操作说明", _toggle_help],
+		["音频设置", _toggle_settings],
 		["退出", _on_quit],
 	]:
 		var b := Button.new()
@@ -89,6 +93,7 @@ func _build() -> void:
 		b.custom_minimum_size = Vector2(340, 56)
 		b.add_theme_font_size_override("font_size", 22)
 		b.pressed.connect(item[1])
+		b.pressed.connect(func() -> void: AudioManager.play_sfx(&"ui_click"))
 		if primary:
 			var n := DarkUI.button_style(false)
 			n.bg_color = Color(0.24, 0.18, 0.10, 0.98)
@@ -128,7 +133,52 @@ func _build() -> void:
 	close.text = "返回"
 	close.custom_minimum_size = Vector2(160, 44)
 	close.pressed.connect(_toggle_help)
+	close.pressed.connect(func() -> void: AudioManager.play_sfx(&"ui_click"))
 	help.add_child(close)
+
+	_settings_panel = PanelContainer.new()
+	_settings_panel.visible = false
+	_settings_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_settings_panel.custom_minimum_size = Vector2(520, 360)
+	_settings_panel.position = Vector2(size.x * 0.5 - 260, size.y * 0.5 - 180)
+	add_child(_settings_panel)
+	var settings := VBoxContainer.new()
+	settings.add_theme_constant_override("separation", 12)
+	_settings_panel.add_child(settings)
+	settings.add_child(_label("音频设置", 26, DarkUI.GOLD))
+	_settings_sliders.clear()
+	for bus_name in ["Master", "Music", "SFX"]:
+		var srow := HBoxContainer.new()
+		srow.add_theme_constant_override("separation", 12)
+		settings.add_child(srow)
+		var name_label := _label({"Master": "总音量", "Music": "音乐/环境", "SFX": "音效"}.get(bus_name, bus_name), 16, DarkUI.TEXT)
+		name_label.custom_minimum_size = Vector2(150, 0)
+		srow.add_child(name_label)
+		var slider := HSlider.new()
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.01
+		slider.value = AudioManager.get_bus_volume(bus_name)
+		slider.custom_minimum_size = Vector2(240, 28)
+		srow.add_child(slider)
+		var value_label := _label("%d%%" % int(slider.value * 100.0), 15, DarkUI.MUTED)
+		value_label.custom_minimum_size = Vector2(60, 0)
+		srow.add_child(value_label)
+		slider.value_changed.connect(_on_volume_changed.bind(bus_name, value_label))
+		_settings_sliders.append(slider)
+	var mute := CheckBox.new()
+	mute.text = "静音"
+	mute.button_pressed = AudioManager.is_muted()
+	mute.add_theme_font_override("font", _font)
+	mute.add_theme_font_size_override("font_size", 16)
+	mute.toggled.connect(_on_mute_toggled)
+	settings.add_child(mute)
+	var sclose := Button.new()
+	sclose.text = "返回"
+	sclose.custom_minimum_size = Vector2(160, 44)
+	sclose.pressed.connect(_toggle_settings)
+	sclose.pressed.connect(func() -> void: AudioManager.play_sfx(&"ui_click"))
+	settings.add_child(sclose)
 
 
 func _label(text: String, font_size: int, color: Color) -> Label:
@@ -161,6 +211,23 @@ func _fade_in() -> void:
 
 func _toggle_help() -> void:
 	_help_panel.visible = not _help_panel.visible
+	if _help_panel.visible:
+		_settings_panel.visible = false
+
+
+func _toggle_settings() -> void:
+	_settings_panel.visible = not _settings_panel.visible
+	if _settings_panel.visible:
+		_help_panel.visible = false
+
+
+func _on_volume_changed(value: float, bus_name: String, value_label: Label) -> void:
+	AudioManager.set_bus_volume(bus_name, value)
+	value_label.text = "%d%%" % int(value * 100.0)
+
+
+func _on_mute_toggled(pressed: bool) -> void:
+	AudioManager.set_muted(pressed)
 
 
 func _on_start() -> void:
@@ -187,6 +254,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 			_on_start()
 		KEY_ESCAPE:
-			_on_quit()
+			if _settings_panel.visible:
+				_toggle_settings()
+			elif _help_panel.visible:
+				_toggle_help()
+			else:
+				_on_quit()
 		KEY_I:
 			_toggle_help()
+		KEY_O:
+			_toggle_settings()
