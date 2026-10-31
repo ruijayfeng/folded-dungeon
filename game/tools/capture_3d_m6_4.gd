@@ -16,6 +16,7 @@ func _initialize() -> void:
 func _shot(name: String) -> void:
 	for i in 10:
 		await process_frame
+	await RenderingServer.frame_post_draw
 	var img: Image = root.get_texture().get_image()
 	img.save_png(ProjectSettings.globalize_path(OUT + name + ".png"))
 	print("SAVED ", name)

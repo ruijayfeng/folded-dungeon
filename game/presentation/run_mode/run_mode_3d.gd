@@ -429,8 +429,8 @@ func _build_hud() -> void:
 		_build_panel.add_child(b)
 		_offer_buttons.append(b)
 		var stripe := ColorRect.new()
-		stripe.position = Vector2(1, 8)
-		stripe.size = Vector2(4, 28)
+		stripe.position = Vector2(7, 8)
+		stripe.size = Vector2(3, 28)
 		stripe.color = COL_GOLD
 		stripe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(stripe)

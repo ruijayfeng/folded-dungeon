@@ -86,8 +86,8 @@ func _build() -> void:
 	]:
 		var b := Button.new()
 		b.text = item[0]
-		b.custom_minimum_size = Vector2(320, 52)
-		b.add_theme_font_size_override("font_size", 18)
+		b.custom_minimum_size = Vector2(340, 56)
+		b.add_theme_font_size_override("font_size", 22)
 		b.pressed.connect(item[1])
 		if primary:
 			var n := DarkUI.button_style(false)
