@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "generated": "2026-10-31",
+  "items": [
+    {
+      "id": "material:blood",
+      "file": "materials/blood.png",
+      "kind": "material",
+      "size": [
+        512,
+        512
+      ],
+      "alpha": true
+    },
+    {
+      "id": "material:cobweb",
+      "file": "materials/cobweb.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "material:flame",
+      "file": "materials/flame.png",
+      "kind": "material",
+      "size": [
+        128,
+        192
+      ],
+      "alpha": true
+    },
+    {
+      "id": "material:floor-stone-n",
+      "file": "materials/floor-stone-n.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "material:floor-stone",
+      "file": "materials/floor-stone.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "material:fog-noise",
+      "file": "materials/fog-noise.png",
+      "kind": "material",
+      "size": [
+        512,
+        512
+      ],
+      "alpha": true
+    },
+    {
+      "id": "material:leather",
+      "file": "materials/leather.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "material:shadow-blob",
+      "file": "materials/shadow-blob.png",
+      "kind": "material",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true
+    },
+    {
+      "id": "material:tox-blob",
+      "file": "materials/tox-blob.png",
+      "kind": "material",
+      "size": [
+        512,
+        512
+      ],
+      "alpha": true
+    },
+    {
+      "id": "material:wall-stone-n",
+      "file": "materials/wall-stone-n.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "material:wall-stone",
+      "file": "materials/wall-stone.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "material:wood-door",
+      "file": "materials/wood-door.png",
+      "kind": "material",
+      "size": [
+        1024,
+        1024
+      ],
+      "alpha": false
+    },
+    {
+      "id": "unit:monster-demon",
+      "file": "units/monster-demon.png",
+      "kind": "unit",
+      "size": [
+        879,
+        968
+      ],
+      "alpha": true
+    },
+    {
+      "id": "unit:monster-skeleton",
+      "file": "units/monster-skeleton.png",
+      "kind": "unit",
+      "size": [
+        845,
+        911
+      ],
+      "alpha": true
+    },
+    {
+      "id": "unit:player-knight",
+      "file": "units/player-knight.png",
+      "kind": "unit",
+      "size": [
+        669,
+        936
+      ],
+      "alpha": true
+    }
+  ]
+}
