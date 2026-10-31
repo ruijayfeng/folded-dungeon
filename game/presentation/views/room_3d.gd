@@ -381,26 +381,6 @@ func _build_props() -> void:
 	# banner on back wall
 	_box(_props_root, Vector3(6.2, 1.45, 1.12), Vector3(0.7, 1.0, 0.04), _mat_cloth)
 	_box(_props_root, Vector3(6.2, 1.99, 1.12), Vector3(0.8, 0.06, 0.06), _mat_gold)
-	# cobweb (additive, black background texture)
-	var web_tex := _tex(MAT_DIR + "cobweb.png")
-	if web_tex != null:
-		var web_mat := StandardMaterial3D.new()
-		web_mat.albedo_texture = web_tex
-		web_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		web_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		web_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		web_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-		web_mat.albedo_color = Color(0.55, 0.58, 0.62, 0.30)
-		for wi in 2:
-			var wq := QuadMesh.new()
-			wq.size = Vector2(2.0, 2.0)
-			var wmi := MeshInstance3D.new()
-			wmi.mesh = wq
-			wmi.material_override = web_mat
-			wmi.position = Vector3(1.0 if wi == 0 else 8.0, 1.8, 1.15)
-			if wi == 1:
-				wmi.scale.x = -1.0
-			_props_root.add_child(wmi)
 
 
 func _build_brazier(pos: Vector3) -> void:
