@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">折叠地牢 Folded Dungeon — 建造地牢，让规则地形成为你的武器</title>
+  <desc id="hero-desc">深色蓝图风格标题：左侧为项目名、一句话玩法与关键数据；右侧为真实的 5×5 房间图，房间以 2D 俯视地牢建造为玩法，门把房间连成环境通道。</desc>
+
+  <defs>
+    <pattern id="bp-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="420" rx="26" fill="#12121a"/>
+  <rect width="1200" height="420" rx="26" fill="url(#bp-grid)"/>
+  <rect x="1" y="1" width="1198" height="418" rx="25" fill="none" stroke="#2a2a3e" stroke-width="1.5"/>
+
+  <!-- title block -->
+  <g id="title-block">
+    <text x="64" y="80" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" letter-spacing="3" fill="#89b4fa">GODOT 4.7 · GDSCRIPT · DETERMINISTIC SIM</text>
+    <text x="62" y="172" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', sans-serif" font-size="80" font-weight="800" fill="#e6e6f0">折叠地牢</text>
+    <text x="64" y="214" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" letter-spacing="9" fill="#8f8fa8">FOLDED DUNGEON</text>
+    <text x="64" y="272" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', sans-serif" font-size="27" font-weight="600" fill="#e6e6f0">你不是探索地牢，而是建造地牢。</text>
+    <text x="64" y="304" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', sans-serif" font-size="20" fill="#a0a0b8">房间当规则组件，门当传导通道，用自己搭的地形打回合制战术战斗。</text>
+  </g>
+
+  <!-- metadata chips -->
+  <g id="meta-chips" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', sans-serif" font-size="17">
+    <rect x="64" y="344" width="140" height="36" rx="8" fill="#1e1e2e" stroke="#2e2e44"/>
+    <text x="82" y="368" fill="#c8c8dd">12 个规则房间</text>
+    <rect x="216" y="344" width="136" height="36" rx="8" fill="#1e1e2e" stroke="#2e2e44"/>
+    <text x="234" y="368" fill="#c8c8dd">5 条环境通道</text>
+    <rect x="364" y="344" width="182" height="36" rx="8" fill="#1e1e2e" stroke="#2e2e44"/>
+    <text x="382" y="368" fill="#c8c8dd">86 tests · 1472 断言</text>
+    <rect x="558" y="344" width="140" height="36" rx="8" fill="#1e1e2e" stroke="#2e2e44"/>
+    <text x="576" y="368" fill="#c8c8dd">144 组合矩阵</text>
+  </g>
+
+  <!-- 5x5 macro grid: real room types from game/data/rooms -->
+  <g id="macro-grid">
+    <text x="736" y="48" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" letter-spacing="2" fill="#6c6c88">MACRO GRID · 5×5</text>
+
+    <!-- empty cells -->
+    <g fill="#171722" stroke="#262636" stroke-width="1">
+      <rect x="736" y="64" width="56" height="56" rx="8"/>
+      <rect x="800" y="64" width="56" height="56" rx="8"/>
+      <rect x="864" y="64" width="56" height="56" rx="8"/>
+      <rect x="928" y="64" width="56" height="56" rx="8"/>
+      <rect x="992" y="64" width="56" height="56" rx="8"/>
+      <rect x="736" y="128" width="56" height="56" rx="8"/>
+      <rect x="800" y="128" width="56" height="56" rx="8"/>
+      <rect x="864" y="128" width="56" height="56" rx="8"/>
+      <rect x="928" y="128" width="56" height="56" rx="8"/>
+      <rect x="992" y="128" width="56" height="56" rx="8"/>
+      <rect x="736" y="192" width="56" height="56" rx="8"/>
+      <rect x="800" y="192" width="56" height="56" rx="8"/>
+      <rect x="864" y="192" width="56" height="56" rx="8"/>
+      <rect x="928" y="192" width="56" height="56" rx="8"/>
+      <rect x="992" y="192" width="56" height="56" rx="8"/>
+      <rect x="736" y="256" width="56" height="56" rx="8"/>
+      <rect x="800" y="256" width="56" height="56" rx="8"/>
+      <rect x="864" y="256" width="56" height="56" rx="8"/>
+      <rect x="928" y="256" width="56" height="56" rx="8"/>
+      <rect x="992" y="256" width="56" height="56" rx="8"/>
+      <rect x="736" y="320" width="56" height="56" rx="8"/>
+      <rect x="800" y="320" width="56" height="56" rx="8"/>
+      <rect x="864" y="320" width="56" height="56" rx="8"/>
+      <rect x="928" y="320" width="56" height="56" rx="8"/>
+      <rect x="992" y="320" width="56" height="56" rx="8"/>
+    </g>
+
+    <!-- placed rooms -->
+    <g font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', sans-serif" font-size="17" font-weight="600">
+      <!-- start room (current) -->
+      <rect x="736" y="64" width="56" height="56" rx="8" fill="#1b2b3d" stroke="#89b4fa" stroke-width="2"/>
+      <text x="764" y="97" text-anchor="middle" fill="#89b4fa">起始</text>
+
+      <!-- 熔炉 / heat -->
+      <rect x="800" y="64" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="828" y="97" text-anchor="middle" fill="#e6e6f0">熔炉</text>
+      <circle cx="846" cy="76" r="5" fill="#ff6b4a"/>
+
+      <!-- 毒雾 / toxin -->
+      <rect x="864" y="64" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="892" y="97" text-anchor="middle" fill="#e6e6f0">毒雾</text>
+      <circle cx="910" cy="76" r="5" fill="#7bdc5a"/>
+
+      <!-- 镜面 / mirror -->
+      <rect x="928" y="64" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="956" y="97" text-anchor="middle" fill="#e6e6f0">镜面</text>
+      <circle cx="974" cy="76" r="5" fill="#c9a227"/>
+
+      <!-- 冰霜 / cold -->
+      <rect x="800" y="128" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="828" y="161" text-anchor="middle" fill="#e6e6f0">冰霜</text>
+      <circle cx="846" cy="140" r="5" fill="#6cc7ff"/>
+
+      <!-- 蓄能 / charge -->
+      <rect x="864" y="128" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="892" y="161" text-anchor="middle" fill="#e6e6f0">蓄能</text>
+      <circle cx="910" cy="140" r="5" fill="#ffd93d"/>
+
+      <!-- 箭塔 / combat -->
+      <rect x="864" y="192" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="892" y="225" text-anchor="middle" fill="#e6e6f0">箭塔</text>
+      <circle cx="910" cy="204" r="5" fill="#e05555"/>
+
+      <!-- 宝库 / gold -->
+      <rect x="928" y="192" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="956" y="225" text-anchor="middle" fill="#e6e6f0">宝库</text>
+      <circle cx="974" cy="204" r="5" fill="#c9a227"/>
+
+      <!-- 导管 / conduit -->
+      <rect x="864" y="256" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="892" y="289" text-anchor="middle" fill="#e6e6f0">导管</text>
+      <circle cx="910" cy="268" r="5" fill="#cdcdf0"/>
+
+      <!-- 折叠 / fold -->
+      <rect x="928" y="256" width="56" height="56" rx="8" fill="#1e1e2e" stroke="#343450"/>
+      <text x="956" y="289" text-anchor="middle" fill="#e6e6f0">折叠</text>
+      <circle cx="974" cy="268" r="5" fill="#b4a7ff"/>
+    </g>
+
+    <!-- doors (gold notches bridging the 8px gaps) -->
+    <g fill="#c9a227">
+      <rect x="794" y="86" width="8" height="12" rx="2"/>
+      <rect x="858" y="86" width="8" height="12" rx="2"/>
+      <rect x="922" y="86" width="8" height="12" rx="2"/>
+      <rect x="822" y="120" width="12" height="8" rx="2"/>
+      <rect x="886" y="120" width="12" height="8" rx="2"/>
+      <rect x="858" y="150" width="8" height="12" rx="2"/>
+      <rect x="886" y="184" width="12" height="8" rx="2"/>
+      <rect x="886" y="248" width="12" height="8" rx="2"/>
+      <rect x="922" y="214" width="8" height="12" rx="2"/>
+      <rect x="950" y="248" width="12" height="8" rx="2"/>
+      <rect x="922" y="278" width="8" height="12" rx="2"/>
+    </g>
+
+  </g>
+
+  <!-- channel legend -->
+  <g id="channel-legend" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" fill="#8f8fa8">
+    <circle cx="740" cy="402" r="4" fill="#ff6b4a"/><text x="750" y="407">HEAT</text>
+    <circle cx="816" cy="402" r="4" fill="#7bdc5a"/><text x="826" y="407">TOXIN</text>
+    <circle cx="898" cy="402" r="4" fill="#6cc7ff"/><text x="908" y="407">COLD</text>
+    <circle cx="972" cy="402" r="4" fill="#ffd93d"/><text x="982" y="407">CHARGE</text>
+    <circle cx="1058" cy="402" r="4" fill="#cdcdf0"/><text x="1068" y="407">AIR</text>
+  </g>
+</svg>
