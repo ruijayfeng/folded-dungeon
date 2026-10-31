@@ -73,6 +73,16 @@
       "alpha": true
     },
     {
+      "id": "material:hazard-mask",
+      "file": "materials/hazard-mask.png",
+      "kind": "material",
+      "size": [
+        256,
+        256
+      ],
+      "alpha": true
+    },
+    {
       "id": "material:leather",
       "file": "materials/leather.png",
       "kind": "material",

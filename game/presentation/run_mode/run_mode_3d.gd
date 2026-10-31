@@ -14,6 +14,7 @@ const COL_SAFE := Color(0.55, 0.82, 0.45)
 
 var run: RunController = null
 var room_3d: Room3D = null
+var macro_map: MacroMap3D = null
 var camera: Camera3D = null
 var units_root: Node3D = null
 var fx_root: Node3D = null
@@ -28,6 +29,8 @@ var _unit_views: Dictionary = {}
 var _room_key := ""
 var _base_camera := Vector3.ZERO
 var _cam_focus := Vector3(ROOM_UNITS * 0.5, 1.15, ROOM_UNITS * 0.5)
+var _cam_size := 10.2
+var _cam_size_target := 10.2
 var _shake := 0.0
 var _time := 0.0
 var _hp_snapshot: Dictionary = {}
@@ -70,6 +73,10 @@ func _ready() -> void:
 	room_3d = Room3D.new()
 	room_3d.name = "Room3D"
 	add_child(room_3d)
+	macro_map = MacroMap3D.new()
+	macro_map.name = "MacroMap"
+	macro_map.visible = false
+	add_child(macro_map)
 	units_root = Node3D.new()
 	units_root.name = "Units"
 	add_child(units_root)
@@ -86,6 +93,8 @@ func _process(delta: float) -> void:
 		return
 	var desired := _cam_focus + Vector3(9.8, 7.6, 9.8)
 	_base_camera = _base_camera.lerp(desired, 1.0 - exp(-delta * 7.0))
+	_cam_size = lerpf(_cam_size, _cam_size_target, 1.0 - exp(-delta * 6.0))
+	camera.size = _cam_size
 	var off := Vector3.ZERO
 	if _shake > 0.001:
 		_shake = maxf(0.0, _shake - delta * 7.0)
@@ -192,6 +201,12 @@ func _default_preview() -> void:
 				return
 
 
+func _preview_def() -> RoomDef:
+	if run == null or selected_offer < 0 or selected_offer >= run.current_offer.size():
+		return null
+	return run.current_offer[selected_offer]
+
+
 func _preview_valid() -> bool:
 	if run == null or run.phase != RunController.Phase.BUILD or preview_cell.x < 0:
 		return false
@@ -204,19 +219,33 @@ func _preview_valid() -> bool:
 func _sync() -> void:
 	if run == null:
 		return
-	_update_camera_focus()
+	var build_mode: bool = run.phase == RunController.Phase.BUILD
 	var previous_hp := _hp_snapshot.duplicate()
 	_hp_snapshot.clear()
-	var room := run.session.current_room()
-	if room != null:
-		var key := "%s|%d|%s" % [str(room.cell), room.orientation, str(room.definition.id)]
-		if key != _room_key:
-			_room_key = key
-			room_3d.setup(room)
-		var state := run.engine.room_state(room.cell)
-		room_3d.update_channels(state)
-	room_3d.highlight_cell(preview_cell if run.phase == RunController.Phase.BUILD else Vector2i(-1, -1),
-		Color(0.35, 0.95, 0.55, 0.25) if _preview_valid() else Color(1.0, 0.35, 0.30, 0.25))
+	if build_mode:
+		_cam_focus = macro_map.center_world()
+		_cam_size_target = 16.0
+		macro_map.visible = true
+		room_3d.visible = false
+		units_root.visible = false
+		fx_root.visible = false
+		macro_map.setup(run.session.grid, run.session.current_room_cell(), preview_cell,
+			_preview_def(), preview_orientation, _preview_valid())
+	else:
+		_update_camera_focus()
+		_cam_size_target = 10.2
+		macro_map.visible = false
+		room_3d.visible = true
+		units_root.visible = true
+		fx_root.visible = true
+		var room := run.session.current_room()
+		if room != null:
+			var key := "%s|%d|%s" % [str(room.cell), room.orientation, str(room.definition.id)]
+			if key != _room_key:
+				_room_key = key
+				room_3d.setup(room)
+			var state := run.engine.room_state(room.cell)
+			room_3d.update_channels(state)
 	_sync_units(previous_hp)
 	_sync_hud()
 
@@ -224,6 +253,13 @@ func _sync() -> void:
 func _sync_units(previous_hp: Dictionary) -> void:
 	var wanted: Dictionary = {}
 	if run == null or run.session == null:
+		return
+	if run.phase == RunController.Phase.BUILD:
+		for unit_id in _unit_views.keys():
+			var old_view: Unit3D = _unit_views[unit_id]
+			if old_view != null:
+				old_view.queue_free()
+		_unit_views.clear()
 		return
 	if run.phase == RunController.Phase.ENCOUNTER and run.combat != null and run.combat.state != null:
 		for unit in run.combat.state.units:
@@ -375,7 +411,7 @@ func _build_hud() -> void:
 		b.pressed.connect(_on_offer_pressed.bind(i))
 		_build_panel.add_child(b)
 		_offer_buttons.append(b)
-	_label(_build_panel, "1/2/3 选择 · 鼠标点地图格 · R 旋转 · Enter 建造", Vector2(14, 172), 12, COL_MUTED, _font_body)
+	_label(_build_panel, "1/2/3 选择 · 鼠标点 3D 地图格 · R 旋转 · Enter 建造", Vector2(14, 172), 12, COL_MUTED, _font_body)
 
 	_choice_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 180), Vector2(340, 180))
 	for i in 3:
@@ -555,6 +591,8 @@ func _sync_hud() -> void:
 		_lbl_intent.text = "玩家回合 · 剩余移动 %d\n敌人意图：靠近 / 攻击" % run.session.player.move_points
 	elif run.phase == RunController.Phase.BUILD:
 		_lbl_intent.text = "选择蓝图并放置房间\n门位需与相邻房间对齐"
+	elif run.phase == RunController.Phase.BUILD:
+		_lbl_intent.text = "在 5×5 地牢格上放置房间\n鼠标点格 / 方向键移动 / R 旋转"
 	else:
 		_lbl_intent.text = "目标：清空本层 7 个槽位"
 	_apply_phase_visibility()
@@ -657,9 +695,9 @@ func _phase_name() -> String:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if run != null and run.phase == RunController.Phase.BUILD:
-			var cell := _cell_from_screen(event.position)
-			if cell.x >= 0:
-				preview_cell = cell
+			var macro_cell := _macro_cell_from_screen(event.position)
+			if macro_cell.x >= 0:
+				preview_cell = macro_cell
 				_sync()
 		return
 	if not (event is InputEventKey and event.pressed and not event.echo):
@@ -679,9 +717,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_offer_pressed(keycode - KEY_1)
 			KEY_R:
 				preview_orientation = (preview_orientation + 1) % 4
+				_lbl_status.text = "旋转预览：%d°" % (preview_orientation * 90)
 				_sync()
 			KEY_ENTER, KEY_KP_ENTER:
 				_try_build()
+			KEY_W, KEY_UP:
+				_move_preview(Vector2i(0, -1))
+			KEY_S, KEY_DOWN:
+				_move_preview(Vector2i(0, 1))
+			KEY_A, KEY_LEFT:
+				_move_preview(Vector2i(-1, 0))
+			KEY_D, KEY_RIGHT:
+				_move_preview(Vector2i(1, 0))
 		return
 	if run.phase == RunController.Phase.EXPLORE:
 		var dir := _key_dir(keycode)
@@ -710,6 +757,31 @@ func _unhandled_input(event: InputEvent) -> void:
 func apply_map_visibility() -> void:
 	if _map_panel != null:
 		_map_panel.visible = _map_visible
+
+
+func _macro_cell_from_screen(screen: Vector2) -> Vector2i:
+	if camera == null:
+		return Vector2i(-1, -1)
+	var from := camera.project_ray_origin(screen)
+	var dir := camera.project_ray_normal(screen)
+	if absf(dir.y) < 0.0001:
+		return Vector2i(-1, -1)
+	var t := -from.y / dir.y
+	if t < 0:
+		return Vector2i(-1, -1)
+	var hit := from + dir * t
+	var cell := MacroMap3D.world_to_cell(hit)
+	if cell.x < 0 or cell.y < 0:
+		return Vector2i(-1, -1)
+	return cell
+
+
+func _move_preview(delta: Vector2i) -> void:
+	var cell := preview_cell + delta
+	cell.x = clampi(cell.x, 0, 4)
+	cell.y = clampi(cell.y, 0, 4)
+	preview_cell = cell
+	_sync()
 
 
 func _cell_from_screen(screen: Vector2) -> Vector2i:
@@ -763,6 +835,20 @@ func _on_map_cell_pressed(cell: Vector2i) -> void:
 	_sync()
 
 
+func _flash_transition() -> void:
+	if hud_root == null:
+		return
+	var flash := ColorRect.new()
+	flash.color = Color(0.85, 0.75, 0.55, 0.0)
+	flash.size = hud_root.size
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.add_child(flash)
+	var t := create_tween()
+	t.tween_property(flash, "color:a", 0.35, 0.10)
+	t.tween_property(flash, "color:a", 0.0, 0.22)
+	t.tween_callback(func() -> void: flash.queue_free())
+
+
 func _try_build() -> void:
 	if run == null or run.phase != RunController.Phase.BUILD or selected_offer < 0:
 		return
@@ -771,6 +857,7 @@ func _try_build() -> void:
 		return
 	var report := run.build_and_place(selected_offer, preview_cell, preview_orientation)
 	if report.is_valid():
+		_flash_transition()
 		_lbl_status.text = "建造成功：穿过门进入新房间"
 		selected_offer = 0 if not run.current_offer.is_empty() else -1
 		preview_orientation = 0
@@ -791,6 +878,7 @@ func _explore_move(dir: int) -> void:
 	if run.session.current_room_cell() != from_room:
 		run.on_room_entered(run.session.current_room_cell())
 		_room_key = ""
+		_flash_transition()
 	_sync()
 
 

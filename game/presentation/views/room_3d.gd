@@ -27,6 +27,10 @@ var _lights: Array[OmniLight3D] = []
 var _flames: Array[Sprite3D] = []
 var _hazard_planes: Array[Dictionary] = []
 var _emitter_lights: Array[Dictionary] = []
+var _hazard_particles: Array[Dictionary] = []
+var _theme: Dictionary = {}
+var _mat_floor_room: StandardMaterial3D
+var _mat_wall_room: StandardMaterial3D
 var _brazier_light: OmniLight3D = null
 var _time := 0.0
 
@@ -187,6 +191,10 @@ func setup(room: RoomInstance) -> void:
 	_flames.clear()
 	_hazard_planes.clear()
 	_emitter_lights.clear()
+	_hazard_particles.clear()
+	_theme = RoomTheme.for_id(room.definition.id)
+	_mat_floor_room = _tinted(_mat_floor, _theme.get("tint", Color.WHITE))
+	_mat_wall_room = _tinted(_mat_wall, _theme.get("tint", Color.WHITE))
 	_brazier_light = null
 	if room == null or room_def == null or room_def.layout == null:
 		return
@@ -198,14 +206,24 @@ func setup(room: RoomInstance) -> void:
 	add_child(_door_root)
 	_build_doors(room)
 	_build_props()
+	_build_theme_decor()
 	_build_grid()
 	_build_hazard_slots(layout)
+	_build_hazard_particles(layout)
 	# warm brazier in a safe interior corner
 	_build_brazier(Vector3(7.35, 0.0, 1.45))
+	# room accent light (theme)
+	var accent: Color = _theme.get("accent", Color(1.0, 0.62, 0.28))
+	var al := OmniLight3D.new()
+	al.position = Vector3(ROOM * 0.5, 1.0, ROOM * 0.5)
+	al.light_color = accent
+	al.light_energy = 1.1
+	al.omni_range = 6.0
+	add_child(al)
 
 
 func _build_floor() -> void:
-	_floor = _plane(self, Vector3(ROOM * 0.5, 0.0, ROOM * 0.5), Vector2(ROOM + 0.4, ROOM + 0.4), _mat_floor)
+	_floor = _plane(self, Vector3(ROOM * 0.5, 0.0, ROOM * 0.5), Vector2(ROOM + 0.4, ROOM + 0.4), _mat_floor_room)
 
 
 func _build_walls(layout: RoomLayout) -> void:
@@ -228,7 +246,7 @@ func _build_walls(layout: RoomLayout) -> void:
 			if near_camera:
 				_box(walls, Vector3(c + 0.5, 0.12, r + 0.5), Vector3(1.0, 0.24, 1.0), _mat_stone_dark)
 				continue
-			_box(walls, Vector3(c + 0.5, WALL_H * 0.5, r + 0.5), Vector3(1.0, WALL_H, 1.0), _mat_wall)
+			_box(walls, Vector3(c + 0.5, WALL_H * 0.5, r + 0.5), Vector3(1.0, WALL_H, 1.0), _mat_wall_room)
 			_box(walls, Vector3(c + 0.5, WALL_H + 0.08, r + 0.5), Vector3(1.06, 0.16, 1.06), _mat_stone_dark)
 	# wall trim strip at floor line (interior side)
 	_box(walls, Vector3(ROOM * 0.5, 0.05, 0.98), Vector3(ROOM - 1.0, 0.1, 0.06), _mat_stone_dark)
@@ -440,17 +458,20 @@ func _build_hazard_slots(layout: RoomLayout) -> void:
 	_hazard_root.name = "Hazard"
 	add_child(_hazard_root)
 	var seen := {}
+	var blob_tex := _tex(MAT_DIR + "hazard-mask.png")
 	for channel in layout.hazard_cells:
 		seen[int(channel)] = true
 		var cells: Array = layout.hazard_cells[channel]
 		for cell in cells:
-			var mat := StandardMaterial3D.new()
-			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-			mat.albedo_color = Color(CHANNEL_COLORS.get(int(channel), Color.WHITE), 0.0)
-			var p := _plane(_hazard_root, Vector3(cell.x + 0.5, 0.03, cell.y + 0.5), Vector2(1.0, 1.0), mat)
-			_hazard_planes.append({"channel": int(channel), "plane": p, "mat": mat})
+			var decal := Decal.new()
+			if blob_tex != null:
+				decal.texture_albedo = blob_tex
+			decal.size = Vector3(1.6, 1.2, 1.6)
+			decal.position = Vector3(cell.x + 0.5, 0.65, cell.y + 0.5)
+			decal.albedo_mix = 1.0
+			decal.cull_mask = 1
+			_hazard_root.add_child(decal)
+			_hazard_planes.append({"channel": int(channel), "decal": decal})
 	for emitter in room_def.emitters:
 		if emitter == null:
 			continue
@@ -471,19 +492,160 @@ func update_channels(state: RoomState) -> void:
 		return
 	for entry in _hazard_planes:
 		var ch: int = entry["channel"]
-		var mat: StandardMaterial3D = entry["mat"]
+		var decal: Decal = entry["decal"]
 		var value := state.get_channel(ch)
-		if value <= 0:
-			mat.albedo_color.a = 0.0
-			continue
 		var col: Color = CHANNEL_COLORS.get(ch, Color.WHITE)
-		col.a = clampf(float(value) / float(Channels.MAX_VALUE) * 0.55, 0.08, 0.6)
-		mat.albedo_color = col
+		col.a = clampf(float(value) / float(Channels.MAX_VALUE) * 0.55, 0.0, 0.55)
+		decal.modulate = col
 	for entry in _emitter_lights:
 		var ch: int = entry["channel"]
 		var light: OmniLight3D = entry["light"]
 		var value := state.get_channel(ch)
 		light.light_energy = clampf(float(value) / float(Channels.MAX_VALUE), 0.0, 1.0) * 1.6
+	for entry in _hazard_particles:
+		var ch: int = entry["channel"]
+		var node: CPUParticles3D = entry["node"]
+		var value := state.get_channel(ch)
+		node.amount = maxi(1, int(clampf(float(value) / float(Channels.MAX_VALUE), 0.0, 1.0) * 24.0))
+		node.emitting = value > 0
+
+
+func _tinted(base: StandardMaterial3D, tint: Color) -> StandardMaterial3D:
+	var m := base.duplicate() as StandardMaterial3D
+	var c := m.albedo_color
+	m.albedo_color = Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a)
+	return m
+
+
+func _emissive(color: Color, energy: float = 2.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.emission_enabled = true
+	m.emission = color
+	m.emission_energy_multiplier = energy
+	return m
+
+
+func _build_theme_decor() -> void:
+	var accent: Color = _theme.get("accent", Color(1.0, 0.62, 0.28))
+	var decor: StringName = _theme.get("decor", &"camp")
+	match decor:
+		&"forge":
+			_box(_props_root, Vector3(2.35, 0.25, 2.55), Vector3(1.1, 0.5, 0.6), _mat_iron)
+			_box(_props_root, Vector3(2.35, 0.55, 2.35), Vector3(0.5, 0.18, 0.4), _mat_iron)
+			for i in 7:
+				_sphere(_props_root, Vector3(5.9 + (i % 3) * 0.22, 0.08, 2.1 + (i / 3) * 0.2), 0.10, _emissive(Color(1.0, 0.35, 0.10), 2.2))
+			_sphere(_props_root, Vector3(2.4, 0.7, 2.5), 0.06, _emissive(Color(1.0, 0.55, 0.2), 3.0))
+		&"frost":
+			var ice_mat := StandardMaterial3D.new()
+			ice_mat.albedo_color = Color(0.62, 0.82, 0.98, 0.85)
+			ice_mat.emission_enabled = true
+			ice_mat.emission = Color(0.35, 0.62, 0.95)
+			ice_mat.emission_energy_multiplier = 0.55
+			ice_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			ice_mat.roughness = 0.25
+			for i in 6:
+				var h := 0.35 + (i % 3) * 0.14
+				var c := _cyl(_props_root, Vector3(2.15 + (i % 3) * 0.32, h * 0.5, 2.3 + (i / 3) * 0.4), 0.0, 0.075 + (i % 2) * 0.03, h, ice_mat)
+				c.rotation_degrees = Vector3(0, i * 41, (i % 2) * 6)
+			var frost_pool := _plane(_props_root, Vector3(6.55, 0.02, 2.05), Vector2(1.7, 1.3), _emissive(Color(0.30, 0.52, 0.80), 0.35))
+			var pool_mat := frost_pool.material_override as StandardMaterial3D
+			if pool_mat != null:
+				pool_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				pool_mat.albedo_color.a = 0.35
+		&"toxin":
+			for i in 6:
+				_cyl(_props_root, Vector3(2.0 + (i % 3) * 0.4, 0.10, 4.9 + (i / 3) * 0.4), 0.03, 0.08, 0.2, _emissive(Color(0.5, 0.9, 0.3), 1.0))
+		&"storm":
+			_cyl(_props_root, Vector3(2.3, 0.6, 2.3), 0.10, 0.16, 1.2, _mat_iron)
+			for i in 3:
+				_sphere(_props_root, Vector3(2.3, 1.25 + i * 0.18, 2.3), 0.10 - i * 0.02, _emissive(Color(1.0, 0.86, 0.35), 3.0))
+			for i in 4:
+				_box(_props_root, Vector3(6.4 + (i % 2) * 0.4, 0.15, 2.0 + (i / 2) * 0.4), Vector3(0.16, 0.3, 0.16), _mat_iron)
+		&"accumulator":
+			for i in 2:
+				_cyl(_props_root, Vector3(2.3 + i * 0.8, 0.55, 2.4), 0.22, 0.28, 1.1, _mat_stone_dark)
+				_cyl(_props_root, Vector3(2.3 + i * 0.8, 0.9, 2.4), 0.24, 0.24, 0.16, _emissive(Color(1.0, 0.74, 0.28), 2.0))
+		&"conduit":
+			_box(_props_root, Vector3(4.5, 0.22, 2.1), Vector3(4.4, 0.12, 0.12), _mat_iron)
+			_box(_props_root, Vector3(4.5, 0.22, 2.1), Vector3(4.2, 0.05, 0.06), _emissive(Color(0.4, 0.82, 1.0), 1.6))
+		&"mirror":
+			_box(_props_root, Vector3(2.3, 0.9, 2.3), Vector3(0.1, 1.5, 0.8), _emissive(Color(0.72, 0.85, 0.95), 0.8))
+			_box(_props_root, Vector3(6.6, 0.9, 6.4), Vector3(0.8, 1.5, 0.1), _emissive(Color(0.72, 0.85, 0.95), 0.8))
+		&"echo":
+			for i in 4:
+				_cyl(_props_root, Vector3(2.4 + i * 0.5, 0.5 + (i % 2) * 0.18, 6.4 - i * 0.3), 0.02, 0.14, 0.9 + (i % 2) * 0.3, _emissive(Color(0.72, 0.45, 1.0), 1.5)).rotation_degrees = Vector3(0, i * 31, 0)
+		&"gravity":
+			for i in 4:
+				_sphere(_props_root, Vector3(2.3 + (i % 2) * 0.7, 0.7 + (i / 2) * 0.35, 2.3 + (i / 2) * 0.6), 0.16, _mat_stone_dark)
+		&"fold":
+			var torus := TorusMesh.new()
+			torus.inner_radius = 0.8
+			torus.outer_radius = 0.9
+			var ring := MeshInstance3D.new()
+			ring.mesh = torus
+			ring.material_override = _emissive(Color(0.35, 0.65, 1.0), 2.0)
+			ring.position = Vector3(4.5, 0.04, 4.5)
+			_props_root.add_child(ring)
+		&"vault":
+			for i in 5:
+				_sphere(_props_root, Vector3(2.2 + (i % 3) * 0.3, 0.10, 6.3 + (i / 3) * 0.3), 0.13, _emissive(Color(1.0, 0.78, 0.30), 0.9))
+			_box(_props_root, Vector3(6.4, 0.25, 2.2), Vector3(0.8, 0.5, 0.55), _mat_wood)
+			_box(_props_root, Vector3(6.4, 0.55, 2.2), Vector3(0.84, 0.06, 0.58), _mat_gold)
+		&"ballista":
+			_box(_props_root, Vector3(4.5, 0.3, 2.1), Vector3(1.4, 0.35, 0.7), _mat_wood)
+			_cyl(_props_root, Vector3(4.5, 0.55, 2.1), 0.06, 0.06, 1.2, _mat_iron).rotation_degrees = Vector3(0, 0, 90)
+			for i in 5:
+				_box(_props_root, Vector3(2.2 + i * 0.12, 0.2, 6.6), Vector3(0.05, 0.05, 0.9), _mat_wood)
+		&"boss":
+			_box(_props_root, Vector3(4.5, 0.25, 2.2), Vector3(1.2, 0.5, 0.9), _mat_stone_dark)
+			_sphere(_props_root, Vector3(4.5, 0.62, 2.2), 0.24, _mat_bone)
+			_box(_props_root, Vector3(4.5, 0.42, 2.2), Vector3(0.5, 0.1, 0.1), _mat_cloth)
+		&"camp":
+			_box(_props_root, Vector3(2.4, 0.22, 6.9), Vector3(0.9, 0.4, 0.6), _mat_wood)
+			_sphere(_props_root, Vector3(2.6, 0.5, 6.9), 0.10, _emissive(Color(1.0, 0.6, 0.25), 2.0))
+		&"battle":
+			for i in 4:
+				_box(_props_root, Vector3(6.3 + (i % 2) * 0.25, 0.22, 2.1 + (i / 2) * 0.25), Vector3(0.12, 0.4, 0.12), _mat_iron)
+		&"corridor":
+			_cyl(_props_root, Vector3(2.2, 0.35, 6.8), 0.28, 0.24, 0.7, _mat_wood)
+	for light in _props_root.get_children():
+		if light is OmniLight3D:
+			continue
+
+
+func _build_hazard_particles(layout: RoomLayout) -> void:
+	var channels := {}
+	for channel in layout.hazard_cells:
+		channels[int(channel)] = layout.hazard_cells[channel]
+	for emitter in room_def.emitters:
+		if emitter != null:
+			channels[int(emitter.channel)] = []
+	for channel in channels:
+		var cells: Array = channels[channel]
+		var center := Vector3(ROOM * 0.5, 0.0, ROOM * 0.5)
+		if not cells.is_empty():
+			center = Vector3.ZERO
+			for cell in cells:
+				center += Vector3(cell.x + 0.5, 0.0, cell.y + 0.5)
+			center /= float(cells.size())
+		var p := CPUParticles3D.new()
+		p.amount = 24
+		p.lifetime = 2.4
+		p.gravity = Vector3(0, 0.35, 0)
+		p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+		p.emission_box_extents = Vector3(2.6, 0.2, 2.6) if cells.is_empty() else Vector3(0.6, 0.2, 0.6) * float(maxi(1, cells.size()))
+		p.direction = Vector3(0, 1, 0)
+		p.spread = 28.0
+		p.initial_velocity_min = 0.05
+		p.initial_velocity_max = 0.22
+		p.scale_amount_min = 0.06
+		p.scale_amount_max = 0.16
+		p.color = CHANNEL_COLORS.get(int(channel), Color.WHITE)
+		p.position = center + Vector3(0, 0.15, 0)
+		p.emitting = true
+		add_child(p)
+		_hazard_particles.append({"channel": int(channel), "node": p})
 
 
 func highlight_cell(cell: Vector2i, color: Color) -> void:
