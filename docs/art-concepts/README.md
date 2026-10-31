@@ -21,3 +21,9 @@ python3 docs/art-concepts/generate_concepts.py
   --screenshot=docs/art-concepts/style-a-pixel.png --window-size=1200,760 \
   "file://$PWD/docs/art-concepts/style-a-pixel.svg"
 ```
+
+## 定稿（2026-10-31）
+
+- **游戏内视觉：A 像素地牢**；**主视觉/封面：D 折叠地牢**（B/C 归档）。
+- 目标画面（AI 概念稿 + 布局图 + prompt）：[`targets/`](targets/)。
+- 设计规范与实施方案：[`docs/09-视觉与手感升级方案（M6）`](../09-视觉与手感升级方案（M6）.md)；任务拆解：[`.agents/plans/2026-10-31-M6-视觉与手感升级.md`](../../.agents/plans/2026-10-31-M6-视觉与手感升级.md)。
