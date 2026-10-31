@@ -1,4 +1,8 @@
 <p align="center">
+  <a href="./assets/readme/keyart.jpg"><img src="./assets/readme/keyart.jpg" width="100%" alt="《折叠地牢》主视觉：暗黑地牢中的折叠房间与火光"></a>
+</p>
+
+<p align="center">
   <a href="./assets/readme/hero.svg"><img src="./assets/readme/hero.svg" width="100%" alt="《折叠地牢》Folded Dungeon — 你不是探索地牢，而是建造地牢；右侧是 5×5 房间图与五条环境通道"></a>
 </p>
 
@@ -11,7 +15,7 @@
 
 <p align="center">
   <b>2D 俯视角 · 回合制战术 · 空间构筑 · Roguelike</b><br/>
-  <sub>可玩原型 · 12 个规则房间 · 5 条环境通道 · 86 tests / 1472 assertions</sub>
+  <sub>可玩原型 · 12 个规则房间 · 5 条环境通道 · 2.5D 暗黑地牢 · 108 tests / 1707 assertions</sub>
 </p>
 
 ---
@@ -36,15 +40,26 @@
 | **5 条环境通道** | HEAT / TOXIN / COLD / CHARGE / AIRFLOW：一跳传导 + 3 个反应配方（爆燃 / 冷热相消 / 充能释放） |
 | **回合制战术战斗** | 玩家阶段 → 怪物追击 → 环境结算；击退撞墙、燃烧 / 中毒 / 冰冻、Boss 房间能力 |
 | **完整单局循环** | 蓝图 3 选 1 → 构筑 → 探索穿门 → 战斗 / 事件 / 休整 / 商店 → 奖励 → Boss → 结算 |
-| **可玩 GUI 运行层** | 主场景 `run_mode_3d.tscn`：3D 正交斜俯视房间 + AI 立绘单位 + 皮革悬浮 HUD，键鼠均可操作 |
+| **2.5D 暗黑地牢** | 3D 正交斜俯视房间 + AI 立绘单位 + 火把/雾/阴影 + 皮革悬浮 HUD；标题界面 → 单局 → 结算闭环 |
+| **3D 宏观构筑** | 5×5 地牢俯瞰、门位标记、半透明放置 ghost、R 旋转；16 个房间各有主题色与程序化装饰 |
+| **战斗表现** | 命中斩击/受击闪红/伤害数字/镜头抖动；火焰波/镜面转向/箭塔/Boss 能力有事件驱动 FX；程序合成 + CC0 音效 |
 | **存档与复现** | 构筑节点 JSON 快照；同种子楼层 / 蓝图选项可复现；事件日志可回放 |
-| **确定性测试** | 86 tests / 1472 assertions 全绿，含 12×12 = 144 组房间组合矩阵；CI 每次 push/PR 自动跑 |
+| **确定性测试** | 108 tests / 1707 assertions 全绿，含 12×12 = 144 组房间组合矩阵；CI 每次 push/PR 自动跑 |
 
 <p align="center">
-  <img src="./assets/readme/prototype.png" width="100%" alt="M6-1 2.5D 运行层实机截图：3D 石材地牢房间、火把与火盆、AI 立绘骑士与怪物、皮革悬浮 HUD">
+  <img src="./docs/screenshots/m6-6-gameplay.gif" width="100%" alt="《折叠地牢》实机：真实自动化单局从构筑、探索、战斗到 Boss 与结算">
 </p>
 <p align="center">
-  <sub>M6-1 2.5D 运行层实机（v2 第一轮打磨，质量门评审中）· 操作见 <a href="docs/05-GUI运行层说明.md">docs/05</a></sub>
+  <sub>真实自动化单局（同种子可复现）：构筑 → 探索 → 战斗 → Boss → 结算 · 操作见 <a href="docs/05-GUI运行层说明.md">docs/05</a></sub>
+</p>
+
+<p align="center">
+  <img src="./docs/screenshots/m6-6-title.png" width="32%" alt="标题界面：D 主视觉、皮革菜单">
+  <img src="./docs/screenshots/m6-6-build.png" width="32%" alt="3D 宏观构筑：5×5 地牢俯瞰、半透明 ghost、门位标记">
+  <img src="./docs/screenshots/m6-6-boss.png" width="32%" alt="Boss 战：立绘怪物、红色光环、环境通道 HUD">
+</p>
+<p align="center">
+  <sub>标题（D 主视觉） · 3D 宏观构筑 · Boss 战</sub>
 </p>
 
 ## 房间之间怎么联动
@@ -90,8 +105,8 @@ cd folded-dungeon
 #   B. 任意平台已安装的引擎，用 GODOT_BIN 指定
 export GODOT_BIN=/path/to/Godot_v4.7.2-stable
 
-game/tools/godot test    # 无头回归：31 cases / 86 tests / 1472 assertions
-game/tools/godot run     # 打开标题界面 → 可玩 2.5D 运行层
+game/tools/godot test    # 无头回归：37 cases / 108 tests / 1707 assertions
+game/tools/godot run     # 打开标题界面 → 2.5D 单局
 ```
 
 <details>
@@ -113,7 +128,8 @@ game/tools/godot run     # 打开标题界面 → 可玩 2.5D 运行层
 | 探索 | `WASD` 移动；穿过门进入新房间自动触发内容 |
 | 战斗 | `WASD` 移动；`Space` 攻击相邻怪物；`Enter` 结束回合 |
 | 事件 / 休整 / 商店 | `1 / 2 / 3` 选择选项 |
-| 结算 | `R` 重新开始 |
+| 结算 | `R` 再来一局；`T` 返回标题 |
+| 通用 | `Tab` 地牢地图；`F3` 调试面板；`Esc` 返回标题 |
 
 ## 项目结构
 
@@ -126,8 +142,9 @@ game/
 │   ├── combat/      # 单位、战斗状态机、投射物
 │   └── run/         # 单局、楼层计划、构筑、存档
 ├── data/            # 16 个房间 Resource（.tres）+ 3 个配方
-├── presentation/    # 表现层：场景、UI、占位色块渲染
-├── tests/           # 无头测试运行器 + 26 个用例 + 5 个验收场景
+├── presentation/    # 表现层：2.5D 场景/立绘单位/皮革 UI/音频管理
+├── assets/          # AI 材质/立绘、CC0 音频、子集字体
+├── tests/           # 无头测试运行器 + 37 个用例 + 5 个验收场景
 └── tools/godot      # 引擎包装脚本（import / test / editor / run / gen-data）
 ```
 
@@ -147,18 +164,19 @@ game/
 | M3 | `m3` | 回合制战斗（追击、击退、投射物、环境联动） | 69 |
 | M4 | `m4` | 单局垂直切片（7 槽位、Boss、奖励、楼层结算） | 75 |
 | M5 | `m5` | 12 房间 + 144 组合矩阵 + **可玩 GUI 运行层** + 存档 + 发布准备 | 86 |
+| M6 | `m6` | 2.5D 暗黑地牢：3D 场景/立绘单位/16 房间主题/战斗 FX/标题皮革 UI/程序合成+CC0 音频 | **108** |
 
-**已验证：** 自动化垂直切片可完整通关；12 个房间全部加载 / 校验；144 组房间组合双引擎快照一致；存档往返后继续通关；CI 在 Linux 上用 Godot 4.7.2 跑通同一套测试。
+**已验证：** 自动化垂直切片可完整通关（含 Boss 与真实结算）；12 个房间全部加载 / 校验；144 组房间组合双引擎快照一致；存档往返后继续通关；标题→单局→结算 UI 闭环；音频/字体/资产加载测试；CI 在 Linux 上用 Godot 4.7.2 跑通同一套测试。
 
 **已知限制（原型阶段）：**
 
-- 美术已进入 **2.5D 第一版**（3D 场景 + AI 立绘单位，主场景已切换；v2 质量门打磨中），音频/正式美术细节待 M6 剩余步骤；
+- **美术/音频为第一版**：AI 材质与立绘、程序化装饰、CC0+合成音效已接入，但动作帧密度、主题道具与混音仍可继续打磨；
 - Windows 导出预设已就绪，但本机缺 4.7.2 导出模板，尚未实际出包；
 - 折叠仅实现虚拟传导边，折叠移动 / UI 待扩展；
 - 投射物为房间级抽象（逐格弹道、风暴 / 重力偏转待后续）；
-- GUI 尚未人工试玩验收（手感 / 布局待记录）。
+- GUI 尚未人工试玩验收（手感 / 布局待记录，M6-6 已录自动化通关 GIF 作为证据）。
 
-**下一步：** M6-6 验收与发布素材（截图/GIF、README 更新、导出准备、性能与人工验收）；方案 [`docs/09`](docs/09-视觉与手感升级方案（M6）.md)。详见 [`docs/08-发布检查清单`](docs/08-发布检查清单.md)。
+**下一步：** 人工试玩与手感调参 → Windows 导出模板/出包 → 动作帧/主题道具/混音持续优化 → D10 局外成长与折叠移动扩展；详见 [`docs/08-发布检查清单`](docs/08-发布检查清单.md)。
 
 ## 文档
 
@@ -178,4 +196,4 @@ game/
 
 - **自有代码与文档：** [Apache License 2.0](LICENSE)。
 - **第三方内容：** `.agents/skills/` 内 24 个外部 AI 开发技能来自 MIT / Apache-2.0 / LGPL-3.0 仓库（仅辅助开发，不参与游戏运行时）；来源与许可证副本见 [`research/skills-provenance/`](research/skills-provenance/PROVENANCE.md) 与 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
-- **游戏素材：** 当前无第三方音频 / 字体 / 美术，占位渲染由代码绘制；README 的 hero 与管线图为本项目手写 SVG。
+- **游戏素材：** AI 生成材质/立绘/标题主视觉（Azure 图像模型，prompt 存档）；Noto Serif SC 子集（OFL）；CC0 音频（Kenney / artisticdude）+ 程序合成音效。详见 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) 与 [`game/assets/audio/LICENSES.md`](game/assets/audio/LICENSES.md)。
