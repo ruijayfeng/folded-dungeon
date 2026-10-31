@@ -301,6 +301,7 @@ func _sync_units(previous_hp: Dictionary) -> void:
 			view.update_from_unit(unit)
 			if old_cell != unit.local_cell:
 				view.place_at(unit.local_cell, true)
+		_apply_facing(view, unit)
 		var was: int = int(previous_hp.get(unit_id, unit.hp))
 		if was > unit.hp:
 			_damage_number(unit.local_cell, was - unit.hp, is_player)
@@ -311,6 +312,25 @@ func _sync_units(previous_hp: Dictionary) -> void:
 			var view: Unit3D = _unit_views[unit_id]
 			view.queue_free()
 			_unit_views.erase(unit_id)
+
+
+func _apply_facing(view: Unit3D, unit: Unit) -> void:
+	if view == null or unit == null:
+		return
+	var target := Vector2i(-1, -1)
+	if unit.team == Unit.TEAM_ENEMY and run.session != null and run.session.player != null:
+		target = run.session.player.local_cell
+	elif unit.team == Unit.TEAM_PLAYER and run.combat != null and run.combat.state != null:
+		var best := 99
+		for enemy in run.combat.state.living_enemies():
+			var d := absi(enemy.local_cell.x - unit.local_cell.x) + absi(enemy.local_cell.y - unit.local_cell.y)
+			if d < best:
+				best = d
+				target = enemy.local_cell
+	if target.x < 0:
+		return
+	var screen_dx := (target.x - target.y) - (unit.local_cell.x - unit.local_cell.y)
+	view.set_facing(screen_dx < 0)
 
 
 func _attack_feedback(unit_id: StringName, is_player: bool) -> void:
@@ -350,6 +370,14 @@ func _clear_unit_views() -> void:
 
 func _shake_camera(amount: float) -> void:
 	_shake = maxf(_shake, amount)
+
+
+func _zoom_pulse(amount: float = 0.4) -> void:
+	_cam_size_target = 10.2 - amount
+	var token := _cam_size_target
+	get_tree().create_timer(0.16).timeout.connect(func() -> void:
+		if is_equal_approx(_cam_size_target, token):
+			_cam_size_target = 10.2)
 
 
 # ---------------------------------------------------------------- HUD
@@ -1045,6 +1073,7 @@ func _apply_fx(desc: Dictionary) -> void:
 			_shake_camera(0.9)
 		"death":
 			AudioManager.play_sfx(&"death")
+			_zoom_pulse(0.5)
 			var unit_id := StringName(desc.get("unit", &""))
 			var cell := _unit_cell(unit_id)
 			if cell.x >= 0:
@@ -1062,6 +1091,7 @@ func _apply_fx(desc: Dictionary) -> void:
 				_burst_cell(cell, Color(0.45, 0.92, 0.35), 14, 0.5)
 		"boss_ability":
 			AudioManager.play_sfx(&"boss_roar")
+			_zoom_pulse(0.7)
 			_burst_cell(Vector2i(4, 3), Color(1.0, 0.28, 0.15), 24, 1.0)
 			_ring_cell(Vector2i(4, 3), Color(1.0, 0.30, 0.18), 1.2)
 			_shake_camera(1.8)
@@ -1237,6 +1267,7 @@ func _explore_move(dir: int) -> void:
 		AudioManager.play_sfx(&"ui_error")
 		return
 	AudioManager.play_footstep()
+	_burst_cell(run.session.player.local_cell, Color(0.45, 0.40, 0.33), 5, 0.18)
 	run.engine.tick()
 	if run.session.current_room_cell() != from_room:
 		run.on_room_entered(run.session.current_room_cell())
@@ -1249,6 +1280,7 @@ func _explore_move(dir: int) -> void:
 func _combat_move(dir: int) -> void:
 	run.combat.player_move(dir)
 	AudioManager.play_footstep()
+	_burst_cell(run.session.player.local_cell, Color(0.45, 0.40, 0.33), 5, 0.18)
 	_sync()
 
 

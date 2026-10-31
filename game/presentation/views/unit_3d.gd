@@ -13,6 +13,10 @@ var body_height := 1.6
 var _sprite: Sprite3D = null
 var _idle_texture: Texture2D = null
 var _attack_texture: Texture2D = null
+var _hurt_texture: Texture2D = null
+var _attack_t := 0.0
+var _hurt_t := 0.0
+var _facing := 1
 var _shadow: MeshInstance3D = null
 var _hp_bg: MeshInstance3D = null
 var _hp_fill: MeshInstance3D = null
@@ -32,6 +36,7 @@ func setup(unit_ref: Unit, player_unit: bool) -> void:
 		return
 	_idle_texture = tex
 	_attack_texture = _load_tex(tex_path.replace(".png", "-attack.png"))
+	_hurt_texture = _load_tex(tex_path.replace(".png", "-hurt.png"))
 	body_height = _pick_height()
 	# contact shadow (flat on the floor, NOT billboarded)
 	_shadow = _ground_shadow(Vector2(1.15, 1.15))
@@ -72,6 +77,8 @@ func _pick_texture() -> String:
 		return UNIT_DIR + "player-knight.png"
 	var label := unit.display_name if unit != null else ""
 	if _is_boss():
+		if ResourceLoader.exists(UNIT_DIR + "monster-boss.png"):
+			return UNIT_DIR + "monster-boss.png"
 		return UNIT_DIR + "monster-demon.png"
 	var n := 0
 	for ch in label:
@@ -87,7 +94,7 @@ func _pick_height() -> float:
 		return 1.9
 	var label := unit.display_name if unit != null else ""
 	if _is_boss():
-		return 2.5
+		return 2.6
 	if label.contains("精英"):
 		return 1.75
 	return 1.55 if label.contains("1") or label.contains("3") else 1.45
@@ -205,6 +212,32 @@ func update_from_unit(unit_ref: Unit) -> void:
 		_die_visual()
 
 
+func _process(delta: float) -> void:
+	if _attack_t > 0.0:
+		_attack_t = maxf(0.0, _attack_t - delta)
+	if _hurt_t > 0.0:
+		_hurt_t = maxf(0.0, _hurt_t - delta)
+	_refresh_texture()
+
+
+func _refresh_texture() -> void:
+	if _sprite == null:
+		return
+	var tex := _idle_texture
+	if _hurt_t > 0.0 and _hurt_texture != null:
+		tex = _hurt_texture
+	elif _attack_t > 0.0 and _attack_texture != null:
+		tex = _attack_texture
+	if tex != null and _sprite.texture != tex:
+		_sprite.texture = tex
+
+
+func set_facing(flip: bool) -> void:
+	_facing = -1 if flip else 1
+	if _sprite != null:
+		_sprite.scale.x = float(_facing)
+
+
 func _update_hp() -> void:
 	if unit == null or _hp_fill == null:
 		return
@@ -227,24 +260,18 @@ func flash_hit() -> void:
 	_sprite.modulate = Color(1.6, 0.55, 0.45, 1.0)
 	_hit_tween = create_tween()
 	_hit_tween.tween_property(_sprite, "modulate", Color(0.97, 0.92, 0.85, 1.0), 0.18)
+	_hurt_t = 0.2
 
 
 func play_attack() -> void:
 	if _sprite == null:
 		return
-	var had_attack := _attack_texture != null
-	if had_attack:
-		_sprite.texture = _attack_texture
-		var base_tex := _idle_texture
-		get_tree().create_timer(0.22).timeout.connect(func() -> void:
-			if _sprite != null:
-				_sprite.texture = base_tex)
+	_attack_t = 0.22
+	_refresh_texture()
 	var base := _sprite.position
 	var t := create_tween()
 	t.tween_property(_sprite, "position", base + Vector3(0, 0.12, 0.35), 0.06)
 	t.tween_property(_sprite, "position", base, 0.10)
-	t.parallel().tween_property(_sprite, "scale", Vector3(1.04, 0.96, 1.0), 0.06)
-	t.tween_property(_sprite, "scale", Vector3.ONE, 0.08)
 
 
 func _die_visual() -> void:
