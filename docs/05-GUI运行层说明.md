@@ -1,4 +1,6 @@
-# 05 · GUI 运行层说明（M5 可玩版本）
+# 05 · GUI 运行层说明（M5 可玩版本，M6 起主场景已切 2.5D）
+
+> **M6-1 起**：主场景为 `game/presentation/run_mode/run_mode_3d.tscn`（3D 房间 + 立绘单位 + 皮革 HUD）；旧的 `run_mode.tscn` 仅保留给回归测试。本篇操作语义仍适用，界面截图待 M6-4 更新。
 
 > 场景：`game/presentation/run_mode/run_mode.tscn`（`project.godot` 主场景）
 > 运行：`game/tools/godot run`
