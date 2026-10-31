@@ -109,6 +109,12 @@ game/tools/godot test    # 无头回归：37 cases / 108 tests / 1707 assertions
 game/tools/godot run     # 打开标题界面 → 2.5D 单局
 ```
 
+**Windows 预览版：** 见 [Releases → m6-windows-preview](https://github.com/ruijayfeng/folded-dungeon/releases/tag/m6-windows-preview)（单个 exe，内嵌 pck；尚未在 Windows 真机冒烟，欢迎反馈）。
+
+```bash
+# 也可以自己运行编辑器/无头测试
+```
+
 <details>
 <summary>不用包装脚本时（Windows PowerShell / 手动调用引擎）</summary>
 
