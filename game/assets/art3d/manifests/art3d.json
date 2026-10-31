@@ -173,6 +173,16 @@
       "alpha": true
     },
     {
+      "id": "unit:monster-demon-hurt",
+      "file": "units/monster-demon-hurt.png",
+      "kind": "unit",
+      "size": [
+        796,
+        994
+      ],
+      "alpha": true
+    },
+    {
       "id": "unit:monster-demon",
       "file": "units/monster-demon.png",
       "kind": "unit",
@@ -193,6 +203,16 @@
       "alpha": true
     },
     {
+      "id": "unit:monster-skeleton-hurt",
+      "file": "units/monster-skeleton-hurt.png",
+      "kind": "unit",
+      "size": [
+        686,
+        967
+      ],
+      "alpha": true
+    },
+    {
       "id": "unit:monster-skeleton",
       "file": "units/monster-skeleton.png",
       "kind": "unit",
@@ -209,6 +229,16 @@
       "size": [
         665,
         990
+      ],
+      "alpha": true
+    },
+    {
+      "id": "unit:player-knight-hurt",
+      "file": "units/player-knight-hurt.png",
+      "kind": "unit",
+      "size": [
+        723,
+        923
       ],
       "alpha": true
     },
