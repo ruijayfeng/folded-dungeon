@@ -38,8 +38,8 @@ var _engine_seen := 0
 var _combat_seen := 0
 var _combat_ref: CombatController = null
 
-var _font_title: SystemFont
-var _font_body: SystemFont
+var _font_title: Font
+var _font_body: Font
 var _title_panel: Panel
 var _stats_panel: Panel
 var _right_panel: Panel
@@ -49,6 +49,8 @@ var _choice_panel: Panel
 var _channels_panel: Panel
 var _settle_panel: Panel
 var _map_panel: Panel
+var _debug_panel: Panel
+var _debug_label: Label
 
 var _lbl_title: Label
 var _lbl_floor: Label
@@ -60,12 +62,16 @@ var _lbl_units: Label
 var _lbl_intent: Label
 
 var _offer_buttons: Array[Button] = []
+var _offer_stripes: Array[ColorRect] = []
 var _choice_buttons: Array[Button] = []
+var _choice_title: Label
+var _choice_desc: Label
 var _channel_bars: Array[ColorRect] = []
 var _channel_labels: Array[Label] = []
 var _map_cells: Array[Button] = []
 var _settle_label: Label
 var _restart_button: Button
+var _title_button: Button
 
 var _map_visible := false
 
@@ -347,15 +353,14 @@ func _build_hud() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	var vw := vp.x
 	var vh := vp.y
-	_font_title = SystemFont.new()
-	_font_title.font_names = PackedStringArray(["Songti SC", "Noto Serif SC", "STSong", "PingFang SC"])
-	_font_body = SystemFont.new()
-	_font_body.font_names = PackedStringArray(["Songti SC", "Noto Serif SC", "PingFang SC"])
+	_font_title = DarkUI.font()
+	_font_body = DarkUI.font()
 	hud = CanvasLayer.new()
 	hud.layer = 10
 	add_child(hud)
 	hud_root = Control.new()
 	hud_root.size = Vector2(vw, vh)
+	hud_root.theme = DarkUI.theme()
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(hud_root)
 
@@ -406,6 +411,10 @@ func _build_hud() -> void:
 	_bottom_panel = _panel(Vector2(24, vh - 24 - 54), Vector2(vw - 48, 54))
 	_label(_bottom_panel, "WASD 移动   ·   SPACE 攻击   ·   ENTER 结束回合/建造   ·   R 旋转   ·   TAB 地图   ·   1/2/3 选择", Vector2(14, 10), 15, COL_TEXT, _font_body)
 	_lbl_status = _label(_bottom_panel, "", Vector2(14, 32), 12, COL_MUTED, _font_body)
+	_debug_panel = _panel(Vector2(vw - 24 - 380, vh - 24 - 54 - 12 - 150), Vector2(380, 150))
+	_debug_label = _label(_debug_panel, "", Vector2(12, 8), 12, COL_MUTED, _font_body)
+	_debug_label.size = Vector2(356, 136)
+	_debug_panel.visible = false
 
 	_build_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 200), Vector2(340, 200))
 	_label(_build_panel, "蓝图", Vector2(14, 8), 19, COL_GOLD, _font_title)
@@ -417,29 +426,49 @@ func _build_hud() -> void:
 		b.pressed.connect(_on_offer_pressed.bind(i))
 		_build_panel.add_child(b)
 		_offer_buttons.append(b)
+		var stripe := ColorRect.new()
+		stripe.position = Vector2(1, 8)
+		stripe.size = Vector2(4, 28)
+		stripe.color = COL_GOLD
+		stripe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(stripe)
+		_offer_stripes.append(stripe)
 	_label(_build_panel, "1/2/3 选择 · 鼠标点 3D 地图格 · R 旋转 · Enter 建造", Vector2(14, 172), 12, COL_MUTED, _font_body)
 
-	_choice_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 180), Vector2(340, 180))
+	_choice_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 200), Vector2(340, 200))
+	_choice_title = _label(_choice_panel, "事件", Vector2(14, 8), 20, COL_GOLD, _font_title)
+	_choice_desc = _label(_choice_panel, "", Vector2(14, 34), 12, COL_MUTED, _font_body)
+	_choice_desc.size = Vector2(312, 38)
+	_choice_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for i in 3:
 		var b := Button.new()
-		b.position = Vector2(14, 14 + i * 48)
-		b.size = Vector2(310, 42)
+		b.position = Vector2(14, 78 + i * 40)
+		b.size = Vector2(310, 38)
 		_style_button(b)
 		b.pressed.connect(_on_choice_pressed.bind(i))
 		_choice_panel.add_child(b)
 		_choice_buttons.append(b)
 
 	_settle_panel = _panel(Vector2(vw * 0.5 - 220, vh * 0.5 - 130), Vector2(440, 260))
-	_settle_label = _label(_settle_panel, "", Vector2(20, 24), 30, COL_GOLD, _font_title)
-	_settle_label.size = Vector2(400, 120)
+	_settle_label = _label(_settle_panel, "", Vector2(20, 20), 32, COL_GOLD, _font_title)
+	_settle_label.size = Vector2(400, 96)
 	_settle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var settle_sub := _label(_settle_panel, "", Vector2(20, 120), 14, COL_MUTED, _font_body)
+	settle_sub.name = "SettleSub"
 	_restart_button = Button.new()
-	_restart_button.text = "R · 重新开始"
-	_restart_button.position = Vector2(20, 180)
-	_restart_button.size = Vector2(400, 44)
+	_restart_button.text = "R · 再来一局"
+	_restart_button.position = Vector2(20, 156)
+	_restart_button.size = Vector2(190, 72)
 	_style_button(_restart_button)
 	_restart_button.pressed.connect(_restart)
 	_settle_panel.add_child(_restart_button)
+	_title_button = Button.new()
+	_title_button.text = "T · 返回标题"
+	_title_button.position = Vector2(220, 156)
+	_title_button.size = Vector2(190, 72)
+	_style_button(_title_button)
+	_title_button.pressed.connect(_go_title)
+	_settle_panel.add_child(_title_button)
 
 	_map_panel = _panel(Vector2(24, 100), Vector2(260, 292))
 	_label(_map_panel, "地牢地图 (TAB)", Vector2(14, 8), 16, COL_GOLD, _font_title)
@@ -603,6 +632,7 @@ func _sync_hud() -> void:
 		_lbl_intent.text = "目标：清空本层 7 个槽位"
 	_apply_phase_visibility()
 	_sync_map()
+	_sync_debug_panel()
 
 
 func _colorset(bars: Array[ColorRect], index: int, color: Color, ratio: float) -> void:
@@ -646,6 +676,30 @@ func _sync_map() -> void:
 			b.add_theme_stylebox_override("pressed", sb)
 
 
+func _sync_debug_panel() -> void:
+	if _debug_label == null or not _debug_panel.visible or run == null:
+		return
+	var lines: Array[String] = []
+	lines.append("phase=%s  floor=%d  run_seed=%d" % [_phase_name(), run.state.floor, RUN_SEED])
+	lines.append("room=%s  grid_rooms=%d" % [str(run.session.current_room_cell()), run.session.grid.room_count()])
+	if run.session.player != null:
+		lines.append("player cell=%s hp=%d/%d" % [str(run.session.player.local_cell), run.session.player.hp, run.session.player.max_hp])
+		var room := run.session.current_room()
+		if room != null:
+			var state := run.engine.room_state(room.cell)
+			if state != null:
+				var parts: Array[String] = []
+				for i in Channels.COUNT:
+					parts.append("%s=%d" % [Channels.name_of(i), state.get_channel(i)])
+				lines.append("  ".join(parts))
+	lines.append("F3 关闭 · Tab 地图 · Esc 标题")
+	_debug_label.text = "\n".join(lines)
+
+
+func _go_title() -> void:
+	get_tree().change_scene_to_file("res://presentation/ui/title_screen.tscn")
+
+
 func _apply_phase_visibility() -> void:
 	if run == null:
 		return
@@ -661,26 +715,38 @@ func _apply_phase_visibility() -> void:
 				var def := run.current_offer[i]
 				b.visible = true
 				b.text = "%d. %s  (%d BP)" % [i + 1, def.display_name, def.build_cost]
+				if i < _offer_stripes.size():
+					_offer_stripes[i].color = RoomTheme.accent_for(def.id)
 			else:
 				b.visible = false
 	elif run.phase == RunController.Phase.EVENT:
+		_choice_title.text = "事件 · 神秘祭坛"
+		_choice_desc.text = "火光照出石壁上的刻痕，选择一份馈赠。"
 		_choice_buttons[0].text = "1. 治疗 +5"
 		_choice_buttons[1].text = "2. 金币 +25"
 		_choice_buttons[2].text = "3. 构筑点 +2"
 		for b in _choice_buttons:
 			b.visible = true
 	elif run.phase == RunController.Phase.REST:
+		_choice_title.text = "休整 · 篝火"
+		_choice_desc.text = "短暂休息，恢复队伍状态。"
 		_choice_buttons[0].text = "1. 休息（治疗 +6）"
 		_choice_buttons[1].visible = false
 		_choice_buttons[2].visible = false
 	elif run.phase == RunController.Phase.SHOP:
+		_choice_title.text = "商店 · 流浪商人"
+		_choice_desc.text = "用金币换取补给与构筑资源。"
 		_choice_buttons[0].text = "1. 免费治疗 +10"
 		_choice_buttons[1].text = "2. 花 20 金币买 3 BP"
 		_choice_buttons[2].text = "3. 离开商店"
 		for b in _choice_buttons:
 			b.visible = true
 	elif run.phase == RunController.Phase.SETTLED:
-		_settle_label.text = "单局结束\n楼层 %d · 金币 %d" % [run.state.floor, run.state.gold]
+		var won: bool = run.combat != null and run.combat.result == &"victory"
+		_settle_label.text = ("地牢已净化" if won else "冒险结束") + "\n楼层 %d · 金币 %d" % [run.state.floor, run.state.gold]
+		var sub_node := _settle_panel.get_node_or_null("SettleSub")
+		if sub_node is Label:
+			(sub_node as Label).text = "构筑点 %d · 房间 %d · 种子复现可重开" % [run.state.build_points, run.session.grid.room_count()]
 	_map_panel.visible = _map_visible
 
 
@@ -709,6 +775,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var keycode: int = event.keycode
+	if keycode == KEY_F3:
+		_debug_panel.visible = not _debug_panel.visible
+		return
+	if keycode == KEY_ESCAPE:
+		_go_title()
+		return
 	if keycode == KEY_TAB:
 		_map_visible = not _map_visible
 		apply_map_visibility()
@@ -716,6 +788,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if run.phase == RunController.Phase.SETTLED:
 		if keycode == KEY_R:
 			_restart()
+		elif keycode == KEY_T:
+			_go_title()
 		return
 	if run.phase == RunController.Phase.BUILD:
 		match keycode:

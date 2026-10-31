@@ -1,0 +1,91 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://assets/art3d/fonts/NotoSerifSC-Subset.ttf" id="1_152aw"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lrtgr"]
+bg_color = Color(0.18, 0.15, 0.11, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.67, 0.38, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xgnqo"]
+bg_color = Color(0.18, 0.15, 0.11, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.67, 0.38, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mu6hv"]
+bg_color = Color(0.1, 0.09, 0.08, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.45, 0.25, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mpy2f"]
+bg_color = Color(0.18, 0.15, 0.11, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.67, 0.38, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_axdti"]
+bg_color = Color(0.08, 0.07, 0.06, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.45, 0.25, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_721ts"]
+bg_color = Color(0.04, 0.04, 0.05, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.45, 0.25, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8xefl"]
+bg_color = Color(0.02, 0.019, 0.024, 0.55)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.25, 1)
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3r8ww"]
+bg_color = Color(0.02, 0.019, 0.024, 0.55)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.25, 1)
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 8
+
+[resource]
+default_font = ExtResource("1_152aw")
+default_font_size = 16
+Button/colors/font_color = Color(0.9, 0.86, 0.76, 1)
+Button/colors/font_hover_color = Color(0.82, 0.67, 0.38, 1)
+Button/colors/font_pressed_color = Color(0.82, 0.67, 0.38, 1)
+Button/font_sizes/font_size = 18
+Button/fonts/font = ExtResource("1_152aw")
+Button/styles/focus = SubResource("StyleBoxFlat_lrtgr")
+Button/styles/hover = SubResource("StyleBoxFlat_xgnqo")
+Button/styles/normal = SubResource("StyleBoxFlat_mu6hv")
+Button/styles/pressed = SubResource("StyleBoxFlat_mpy2f")
+Label/colors/font_color = Color(0.9, 0.86, 0.76, 1)
+Label/font_sizes/font_size = 16
+Label/fonts/font = ExtResource("1_152aw")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_axdti")
+LineEdit/styles/read_only = SubResource("StyleBoxFlat_721ts")
+Panel/styles/panel = SubResource("StyleBoxFlat_8xefl")
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_3r8ww")
