@@ -133,9 +133,10 @@ func _build_preview(cell: Vector2i, def: RoomDef, orientation: int, valid: bool)
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(0.35, 0.95, 0.55, 0.28) if valid else Color(1.0, 0.28, 0.25, 0.30)
+	mat.albedo_color = Color(0.35, 0.95, 0.55, 0.13) if valid else Color(1.0, 0.28, 0.25, 0.15)
 	var mi := _slab(cell, Vector3(SLAB, SLAB_H * 3.0, SLAB), mat, SLAB_H * 1.6)
 	mi.name = "PreviewSlab"
+	_preview_outline(cell, Color(0.45, 1.0, 0.62, 0.9) if valid else Color(1.0, 0.40, 0.35, 0.9))
 	if def == null:
 		return
 	var mask := DoorSpec.rotate_mask(def.door_mask, orientation)
@@ -152,6 +153,18 @@ func _build_preview(cell: Vector2i, def: RoomDef, orientation: int, valid: bool)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.position = cell_to_world(cell) + Vector3(0, 1.15, 0)
 	_root.add_child(label)
+
+
+func _preview_outline(cell: Vector2i, color: Color) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = color
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var base := cell_to_world(cell) + Vector3(0, SLAB_H * 3.0 + SLAB_H * 1.6, 0)
+	for edge in 4:
+		var size := Vector3(SLAB + 0.08, 0.05, 0.06) if edge < 2 else Vector3(0.06, 0.05, SLAB + 0.08)
+		var off := Vector3(0, 0, -SLAB * 0.5) if edge == 0 else (Vector3(0, 0, SLAB * 0.5) if edge == 1 else (Vector3(-SLAB * 0.5, 0, 0) if edge == 2 else Vector3(SLAB * 0.5, 0, 0)))
+		_mesh_box(base + off, size, mat)
 
 
 func _slab(cell: Vector2i, size: Vector3, mat: Material, lift: float) -> MeshInstance3D:

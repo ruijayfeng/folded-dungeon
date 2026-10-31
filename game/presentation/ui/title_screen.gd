@@ -25,7 +25,7 @@ func _build() -> void:
 	add_child(bg)
 
 	var shade := ColorRect.new()
-	shade.color = Color(0.015, 0.014, 0.018, 0.52)
+	shade.color = Color(0.015, 0.014, 0.018, 0.62)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(shade)
@@ -78,6 +78,7 @@ func _build() -> void:
 	_menu = VBoxContainer.new()
 	_menu.add_theme_constant_override("separation", 12)
 	left.add_child(_menu)
+	var primary := true
 	for item in [
 		["开始新的一局", _on_start],
 		["操作说明", _toggle_help],
@@ -86,8 +87,23 @@ func _build() -> void:
 		var b := Button.new()
 		b.text = item[0]
 		b.custom_minimum_size = Vector2(320, 52)
+		b.add_theme_font_size_override("font_size", 18)
 		b.pressed.connect(item[1])
+		if primary:
+			var n := DarkUI.button_style(false)
+			n.bg_color = Color(0.24, 0.18, 0.10, 0.98)
+			n.border_color = DarkUI.GOLD
+			var h := DarkUI.button_style(true)
+			h.bg_color = Color(0.32, 0.24, 0.13, 1.0)
+			h.border_color = DarkUI.GOLD
+			b.add_theme_stylebox_override("normal", n)
+			b.add_theme_stylebox_override("hover", h)
+			b.add_theme_stylebox_override("pressed", h)
+			b.add_theme_color_override("font_color", Color(1.0, 0.92, 0.72))
+			primary = false
 		_menu.add_child(b)
+	if _menu.get_child_count() > 0:
+		(_menu.get_child(0) as Button).grab_focus()
 
 	var credits := _label("v0.6 · M6 2.5D 视觉升级中", 14, DarkUI.MUTED)
 	credits.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)

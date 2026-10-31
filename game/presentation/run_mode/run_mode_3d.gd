@@ -48,9 +48,11 @@ var _build_panel: Panel
 var _choice_panel: Panel
 var _channels_panel: Panel
 var _settle_panel: Panel
+var _settle_dim: ColorRect
 var _map_panel: Panel
 var _debug_panel: Panel
 var _debug_label: Label
+var _bottom_hint: Label
 
 var _lbl_title: Label
 var _lbl_floor: Label
@@ -409,7 +411,7 @@ func _build_hud() -> void:
 		_channel_bars.append(fill)
 
 	_bottom_panel = _panel(Vector2(24, vh - 24 - 54), Vector2(vw - 48, 54))
-	_label(_bottom_panel, "WASD 移动   ·   SPACE 攻击   ·   ENTER 结束回合/建造   ·   R 旋转   ·   TAB 地图   ·   1/2/3 选择", Vector2(14, 10), 15, COL_TEXT, _font_body)
+	_bottom_hint = _label(_bottom_panel, "WASD 移动   ·   SPACE 攻击   ·   ENTER 结束回合/建造   ·   R 旋转   ·   TAB 地图   ·   1/2/3 选择", Vector2(14, 10), 15, COL_TEXT, _font_body)
 	_lbl_status = _label(_bottom_panel, "", Vector2(14, 32), 12, COL_MUTED, _font_body)
 	_debug_panel = _panel(Vector2(vw - 24 - 380, vh - 24 - 54 - 12 - 150), Vector2(380, 150))
 	_debug_label = _label(_debug_panel, "", Vector2(12, 8), 12, COL_MUTED, _font_body)
@@ -435,25 +437,32 @@ func _build_hud() -> void:
 		_offer_stripes.append(stripe)
 	_label(_build_panel, "1/2/3 选择 · 鼠标点 3D 地图格 · R 旋转 · Enter 建造", Vector2(14, 172), 12, COL_MUTED, _font_body)
 
-	_choice_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 200), Vector2(340, 200))
+	_choice_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 214), Vector2(340, 214))
 	_choice_title = _label(_choice_panel, "事件", Vector2(14, 8), 20, COL_GOLD, _font_title)
-	_choice_desc = _label(_choice_panel, "", Vector2(14, 34), 12, COL_MUTED, _font_body)
-	_choice_desc.size = Vector2(312, 38)
+	_choice_desc = _label(_choice_panel, "", Vector2(14, 38), 14, Color(0.78, 0.72, 0.58), _font_body)
+	_choice_desc.size = Vector2(312, 44)
 	_choice_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for i in 3:
 		var b := Button.new()
-		b.position = Vector2(14, 78 + i * 40)
+		b.position = Vector2(14, 88 + i * 38)
 		b.size = Vector2(310, 38)
 		_style_button(b)
 		b.pressed.connect(_on_choice_pressed.bind(i))
 		_choice_panel.add_child(b)
 		_choice_buttons.append(b)
 
+	_settle_dim = ColorRect.new()
+	_settle_dim.color = Color(0.0, 0.0, 0.0, 0.0)
+	_settle_dim.size = Vector2(vw, vh)
+	_settle_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_settle_dim.visible = false
+	hud_root.add_child(_settle_dim)
 	_settle_panel = _panel(Vector2(vw * 0.5 - 220, vh * 0.5 - 130), Vector2(440, 260))
+	_settle_panel.add_theme_stylebox_override("panel", DarkUI.panel_style(0.90))
 	_settle_label = _label(_settle_panel, "", Vector2(20, 20), 32, COL_GOLD, _font_title)
 	_settle_label.size = Vector2(400, 96)
 	_settle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var settle_sub := _label(_settle_panel, "", Vector2(20, 120), 14, COL_MUTED, _font_body)
+	var settle_sub := _label(_settle_panel, "", Vector2(20, 118), 15, Color(0.80, 0.74, 0.60), _font_body)
 	settle_sub.name = "SettleSub"
 	_restart_button = Button.new()
 	_restart_button.text = "R · 再来一局"
@@ -706,6 +715,11 @@ func _apply_phase_visibility() -> void:
 	_build_panel.visible = run.phase == RunController.Phase.BUILD
 	_choice_panel.visible = run.phase in [RunController.Phase.EVENT, RunController.Phase.REST, RunController.Phase.SHOP]
 	_settle_panel.visible = run.phase == RunController.Phase.SETTLED
+	if _settle_dim != null:
+		_settle_dim.visible = run.phase == RunController.Phase.SETTLED
+		_settle_dim.color = Color(0.0, 0.0, 0.0, 0.45)
+	if _bottom_hint != null:
+		_bottom_hint.text = "R · 再来一局      T · 返回标题" if run.phase == RunController.Phase.SETTLED else "WASD 移动   ·   SPACE 攻击   ·   ENTER 结束回合/建造   ·   R 旋转   ·   TAB 地图   ·   1/2/3 选择"
 	if _channels_panel != null:
 		_channels_panel.visible = run.phase == RunController.Phase.ENCOUNTER
 	if run.phase == RunController.Phase.BUILD:
@@ -715,6 +729,19 @@ func _apply_phase_visibility() -> void:
 				var def := run.current_offer[i]
 				b.visible = true
 				b.text = "%d. %s  (%d BP)" % [i + 1, def.display_name, def.build_cost]
+				b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+				var selected := i == selected_offer
+				var sb := DarkUI.button_style(selected)
+				sb.bg_color = Color(0.26, 0.20, 0.10, 0.98) if selected else Color(0.10, 0.09, 0.08, 0.92)
+				sb.border_color = DarkUI.GOLD if selected else DarkUI.GOLD_DIM
+				if selected:
+					sb.border_width_left = 3
+				else:
+					sb.border_width_left = 1
+				b.add_theme_stylebox_override("normal", sb)
+				b.add_theme_stylebox_override("hover", DarkUI.button_style(true))
+				b.add_theme_stylebox_override("pressed", DarkUI.button_style(true))
+				b.add_theme_color_override("font_color", Color(1.0, 0.92, 0.72) if selected else DarkUI.TEXT)
 				if i < _offer_stripes.size():
 					_offer_stripes[i].color = RoomTheme.accent_for(def.id)
 			else:
