@@ -125,6 +125,18 @@ func _cyl(parent: Node3D, pos: Vector3, top: float, bottom: float, height: float
 	return mi
 
 
+func _sphere(parent: Node3D, pos: Vector3, radius: float, mat: Material) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = radius
+	sm.height = radius * 2.0
+	mi.mesh = sm
+	mi.material_override = mat
+	mi.position = pos
+	parent.add_child(mi)
+	return mi
+
+
 func _plane(parent: Node3D, pos: Vector3, size: Vector2, mat: Material) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var pm := PlaneMesh.new()
@@ -232,15 +244,42 @@ func _build_doors(room: RoomInstance) -> void:
 		_door_root.add_child(group)
 		var horizontal: bool = dir == DoorSpec.Dir.N or dir == DoorSpec.Dir.S
 		if horizontal:
-			_box(group, Vector3(-0.45, WALL_H * 0.5, 0), Vector3(0.10, WALL_H, 0.36), _mat_stone_dark)
-			_box(group, Vector3(0.45, WALL_H * 0.5, 0), Vector3(0.10, WALL_H, 0.36), _mat_stone_dark)
-			_box(group, Vector3(0, WALL_H - 0.07, 0), Vector3(1.0, 0.14, 0.36), _mat_stone_dark)
+			_box(group, Vector3(-0.45, WALL_H * 0.5, 0), Vector3(0.10, WALL_H, 0.36), _mat_wall)
+			_box(group, Vector3(0.45, WALL_H * 0.5, 0), Vector3(0.10, WALL_H, 0.36), _mat_wall)
+			_box(group, Vector3(0, WALL_H - 0.07, 0), Vector3(1.0, 0.14, 0.36), _mat_wall)
 			_box(group, Vector3(0, WALL_H - 0.16, 0), Vector3(0.9, 0.05, 0.4), _mat_gold)
 		else:
-			_box(group, Vector3(0, WALL_H * 0.5, -0.45), Vector3(0.36, WALL_H, 0.10), _mat_stone_dark)
-			_box(group, Vector3(0, WALL_H * 0.5, 0.45), Vector3(0.36, WALL_H, 0.10), _mat_stone_dark)
-			_box(group, Vector3(0, WALL_H - 0.07, 0), Vector3(0.36, 0.14, 1.0), _mat_stone_dark)
+			_box(group, Vector3(0, WALL_H * 0.5, -0.45), Vector3(0.36, WALL_H, 0.10), _mat_wall)
+			_box(group, Vector3(0, WALL_H * 0.5, 0.45), Vector3(0.36, WALL_H, 0.10), _mat_wall)
+			_box(group, Vector3(0, WALL_H - 0.07, 0), Vector3(0.36, 0.14, 1.0), _mat_wall)
 			_box(group, Vector3(0, WALL_H - 0.16, 0), Vector3(0.4, 0.05, 0.9), _mat_gold)
+		# cold mist inside the doorway (additive, does not block the player)
+		var mist_tex := _tex(MAT_DIR + "door-mist.png")
+		if mist_tex != null:
+			var out_dir := DoorSpec.delta(dir)
+			var face := Vector3(-out_dir.x, 0.0, -out_dir.y)
+			var mist := MeshInstance3D.new()
+			var qm := QuadMesh.new()
+			qm.size = Vector2(0.92, 2.0)
+			mist.mesh = qm
+			var mm := StandardMaterial3D.new()
+			mm.albedo_texture = mist_tex
+			mm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			mm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			mm.albedo_color = Color(0.55, 0.65, 0.85, 0.22)
+			mist.material_override = mm
+			mist.position = Vector3(out_dir.x * 0.04, 0.95, out_dir.y * 0.04)
+			mist.rotation_degrees.y = rad_to_deg(atan2(face.x, face.z))
+			group.add_child(mist)
+		# dim cold corridor light outside the opening
+		var out_light := OmniLight3D.new()
+		var od := DoorSpec.delta(dir)
+		out_light.position = Vector3(od.x * 0.95, 1.0, od.y * 0.95)
+		out_light.light_color = Color(0.42, 0.55, 0.85)
+		out_light.light_energy = 0.5
+		out_light.omni_range = 2.2
+		group.add_child(out_light)
 		# floor threshold glow
 		var thresh := StandardMaterial3D.new()
 		thresh.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -251,8 +290,8 @@ func _build_doors(room: RoomInstance) -> void:
 		var dl := OmniLight3D.new()
 		dl.position = Vector3(0, 1.2, 0)
 		dl.light_color = Color(1.0, 0.62, 0.28)
-		dl.light_energy = 0.8
-		dl.omni_range = 2.2
+		dl.light_energy = 1.5
+		dl.omni_range = 2.8
 		group.add_child(dl)
 
 
@@ -293,6 +332,34 @@ func _build_props() -> void:
 	_box(_props_root, Vector3(7.0, 0.04, 6.0), Vector3(0.5, 0.05, 0.08), _mat_bone, Vector3(0, 35, 0))
 	for i in 5:
 		_box(_props_root, Vector3(3.6 + i * 0.32, 0.04, 4.1 + (i % 3) * 0.2), Vector3(0.22, 0.04, 0.06), _mat_bone, Vector3(0, 20 + i * 17, 0))
+	# hanging chains on back wall
+	for ci in 3:
+		var base_x := 1.7 + ci * 0.28
+		for li in 5:
+			_box(_props_root, Vector3(base_x + (0.03 if li % 2 == 0 else -0.03), 1.85 - li * 0.16, 1.14), Vector3(0.055, 0.10, 0.04), _mat_iron, Vector3(0, 20 + li * 30, 15))
+	# wall shield
+	_cyl(_props_root, Vector3(7.15, 1.42, 1.16), 0.26, 0.26, 0.06, _mat_wood).rotation_degrees = Vector3(90, 0, 0)
+	_sphere(_props_root, Vector3(7.15, 1.42, 1.22), 0.07, _mat_gold)
+	# candles
+	for cp in [Vector3(2.55, 0.0, 1.55), Vector3(3.05, 0.0, 1.55), Vector3(6.9, 0.0, 7.1)]:
+		_cyl(_props_root, cp + Vector3(0, 0.12, 0), 0.045, 0.055, 0.24, _mat_bone)
+		_flame(_props_root, cp + Vector3(0, 0.36, 0), 0.22)
+		var cl := OmniLight3D.new()
+		cl.position = cp + Vector3(0, 0.42, 0)
+		cl.light_color = Color(1.0, 0.65, 0.32)
+		cl.light_energy = 0.5
+		cl.omni_range = 1.6
+		add_child(cl)
+	# skulls
+	for sp in [Vector3(3.3, 0.13, 6.7), Vector3(6.6, 0.13, 6.7), Vector3(2.55, 0.13, 4.3)]:
+		_sphere(_props_root, sp, 0.13, _mat_bone)
+		_sphere(_props_root, sp + Vector3(-0.05, 0.02, 0.10), 0.035, _mat_stone_dark)
+		_sphere(_props_root, sp + Vector3(0.05, 0.02, 0.10), 0.035, _mat_stone_dark)
+	# rubble
+	for ri in 7:
+		_sphere(_props_root, Vector3(1.4 + (ri % 4) * 0.24, 0.06, 3.1 + (ri / 4) * 0.3), 0.08, _mat_stone_dark)
+	# small crate / barrel
+	_box(_props_root, Vector3(2.55, 0.26, 6.85), Vector3(0.6, 0.52, 0.5), _mat_wood, Vector3(0, 24, 0))
 	# banner on back wall
 	_box(_props_root, Vector3(6.2, 1.45, 1.12), Vector3(0.7, 1.0, 0.04), _mat_cloth)
 	_box(_props_root, Vector3(6.2, 1.99, 1.12), Vector3(0.8, 0.06, 0.06), _mat_gold)

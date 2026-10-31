@@ -11,6 +11,8 @@ var is_player := false
 var body_height := 1.6
 
 var _sprite: Sprite3D = null
+var _idle_texture: Texture2D = null
+var _attack_texture: Texture2D = null
 var _shadow: MeshInstance3D = null
 var _hp_bg: MeshInstance3D = null
 var _hp_fill: MeshInstance3D = null
@@ -27,6 +29,8 @@ func setup(unit_ref: Unit, player_unit: bool) -> void:
 	var tex := _load_tex(tex_path)
 	if tex == null:
 		return
+	_idle_texture = tex
+	_attack_texture = _load_tex(tex_path.replace(".png", "-attack.png"))
 	body_height = _pick_height()
 	# contact shadow (flat on the floor, NOT billboarded)
 	_shadow = _ground_shadow(Vector2(1.15, 1.15))
@@ -195,6 +199,13 @@ func flash_hit() -> void:
 func play_attack() -> void:
 	if _sprite == null:
 		return
+	var had_attack := _attack_texture != null
+	if had_attack:
+		_sprite.texture = _attack_texture
+		var base_tex := _idle_texture
+		get_tree().create_timer(0.22).timeout.connect(func() -> void:
+			if _sprite != null:
+				_sprite.texture = base_tex)
 	var base := _sprite.position
 	var t := create_tween()
 	t.tween_property(_sprite, "position", base + Vector3(0, 0.12, 0.35), 0.06)

@@ -67,4 +67,9 @@ func _drive() -> void:
 			await process_frame
 	mode._sync()
 	await _shot("m6-1-battle")
+	# attack pose QA shot: trigger enemy attack frames
+	for v in mode._unit_views.values():
+		if v != null and not v.is_player:
+			v.play_attack()
+	await _shot("m6-1-attack")
 	quit()

@@ -319,6 +319,11 @@ func _build_hud() -> void:
 
 	_title_panel = _panel(Vector2(24, 20), Vector2(330, 92))
 	_lbl_title = _label(_title_panel, "折叠地牢", Vector2(16, 8), 30, COL_TEXT, _font_title)
+	var rule := ColorRect.new()
+	rule.color = Color(0.72, 0.56, 0.28, 0.75)
+	rule.position = Vector2(18, 42)
+	rule.size = Vector2(52, 2)
+	_title_panel.add_child(rule)
 	_lbl_floor = _label(_title_panel, "", Vector2(18, 46), 14, COL_MUTED, _font_body)
 	_lbl_phase = _label(_title_panel, "", Vector2(18, 66), 15, COL_GOLD, _font_body)
 
@@ -330,6 +335,11 @@ func _build_hud() -> void:
 	_label(_right_panel, "单位", Vector2(16, 10), 19, COL_GOLD, _font_title)
 	_lbl_units = _label(_right_panel, "", Vector2(16, 46), 14, COL_TEXT, _font_body)
 	_lbl_units.size = Vector2(228, 100)
+	var div := ColorRect.new()
+	div.color = Color(0.5, 0.4, 0.24, 0.55)
+	div.position = Vector2(16, 148)
+	div.size = Vector2(228, 1)
+	_right_panel.add_child(div)
 	_lbl_intent = _label(_right_panel, "", Vector2(16, 158), 13, COL_TEXT, _font_body)
 	_lbl_intent.size = Vector2(228, 70)
 
@@ -337,7 +347,7 @@ func _build_hud() -> void:
 	_label(_channels_panel, "环境通道", Vector2(14, 8), 18, COL_GOLD, _font_title)
 	for i in Channels.COUNT:
 		var row_y := 40 + i * 26
-		var name_label := _label(_channels_panel, "", Vector2(14, row_y), 13, COL_MUTED, _font_body)
+		var name_label := _label(_channels_panel, "", Vector2(14, row_y), 13, Room3D.CHANNEL_COLORS.get(i, COL_MUTED), _font_body)
 		_channel_labels.append(name_label)
 		var bg := ColorRect.new()
 		bg.color = Color(0.10, 0.10, 0.12, 0.9)
@@ -352,7 +362,7 @@ func _build_hud() -> void:
 		_channel_bars.append(fill)
 
 	_bottom_panel = _panel(Vector2(24, vh - 24 - 54), Vector2(vw - 48, 54))
-	_label(_bottom_panel, "WASD 移动    SPACE 攻击    ENTER 结束回合/建造    R 旋转    TAB 地图    1/2/3 选择", Vector2(14, 14), 15, COL_TEXT, _font_body)
+	_label(_bottom_panel, "WASD 移动   ·   SPACE 攻击   ·   ENTER 结束回合/建造   ·   R 旋转   ·   TAB 地图   ·   1/2/3 选择", Vector2(14, 10), 15, COL_TEXT, _font_body)
 	_lbl_status = _label(_bottom_panel, "", Vector2(14, 32), 12, COL_MUTED, _font_body)
 
 	_build_panel = _panel(Vector2(24, vh - 24 - 54 - 12 - 200), Vector2(340, 200))
@@ -432,7 +442,27 @@ func _panel(pos: Vector2, size: Vector2) -> Panel:
 		st.modulate_color = Color(0.30, 0.25, 0.21, 0.58)
 		inner.add_theme_stylebox_override("panel", st)
 		p.add_child(inner)
+	_ornament(p, size)
 	return p
+
+
+func _ornament(p: Panel, size: Vector2) -> void:
+	var gold := Color(0.72, 0.56, 0.28, 0.85)
+	for corner in 4:
+		var cx := 4.0 if corner in [0, 2] else size.x - 18.0
+		var cy := 4.0 if corner in [0, 1] else size.y - 4.0
+		var h := ColorRect.new()
+		h.color = gold
+		h.position = Vector2(cx, cy)
+		h.size = Vector2(14, 2)
+		h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(h)
+		var v := ColorRect.new()
+		v.color = gold
+		v.position = Vector2(cx, cy)
+		v.size = Vector2(2, 14)
+		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(v)
 
 
 func _label(parent: Control, text: String, pos: Vector2, font_size: int, color: Color, font: Font) -> Label:
